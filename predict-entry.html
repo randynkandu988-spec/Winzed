@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WinZed — Predict Scores</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+[data-theme="light"]{--bg:#f0eeea;--surface:#ffffff;--surface2:#edeae4;--border:#ddd9d1;--text:#111010;--text2:#6b6660;--text3:#9c9690;--nav-bg:#ffffff;--accent:#d94e18;--green:#1a6e35;--menu-bg:#111010;}
+[data-theme="dark"]{--bg:#101010;--surface:#1c1b19;--surface2:#242220;--border:#2e2b28;--text:#edeae4;--text2:#8a857d;--text3:#5a5550;--nav-bg:#141312;--accent:#e8581a;--green:#1e8040;--menu-bg:#141312;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── NAV ── */
+nav{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--nav-bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.logo{font-family:"Syne",sans-serif;font-weight:800;font-size:1.1rem;letter-spacing:-.5px;display:flex;align-items:center;gap:5px;color:var(--text)}
+.logo span{color:var(--accent)}
+.back-btn{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 13px;font-family:"DM Sans",sans-serif;font-size:.78rem;font-weight:700;color:var(--text2);cursor:pointer;text-decoration:none;transition:all .18s}
+.back-btn:hover{color:var(--text);background:var(--border)}
+.token-pill{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1.5px solid var(--border);border-radius:100px;padding:4px 12px 4px 10px}
+.tp-amt{font-family:"Syne",sans-serif;font-size:.78rem;font-weight:800;color:var(--text)}
+
+/* ── ROUND BANNER ── */
+.round-banner{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.rb-left .rb-name{font-family:"Syne",sans-serif;font-weight:800;font-size:.9rem;color:var(--text)}
+.rb-left .rb-date{font-size:.7rem;color:var(--text2);margin-top:2px}
+.rb-cost{background:#fef3c7;border:1px solid #fde68a;border-radius:100px;padding:4px 12px;font-size:.72rem;font-weight:800;color:#b45309}
+
+/* ── PROGRESS BAR ── */
+.progress-bar-wrap{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px}
+.pb-label{display:flex;justify-content:space-between;font-size:.68rem;font-weight:700;color:var(--text2);margin-bottom:6px}
+.pb-track{height:5px;background:var(--surface2);border-radius:100px;overflow:hidden}
+.pb-fill{height:100%;background:var(--green);border-radius:100px;transition:width .4s ease}
+
+/* ── MATCH CARD ── */
+.matches-wrap{padding:12px 14px;display:flex;flex-direction:column;gap:10px;max-width:520px;margin:0 auto}
+.match-card{background:var(--surface);border:1.5px solid var(--border);border-radius:16px;overflow:hidden;transition:border-color .2s,opacity .3s}
+.match-card.filled{border-color:var(--green)}
+.match-card.locked{opacity:.45;pointer-events:none;user-select:none}
+
+.match-card-head{background:var(--surface2);padding:6px 14px;display:flex;align-items:center;justify-content:space-between}
+.match-num{font-size:.62rem;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.07em}
+.match-done-chip{background:#dcfce7;color:var(--green);border-radius:100px;font-size:.6rem;font-weight:800;padding:2px 8px;display:none}
+.match-card.filled .match-done-chip{display:inline-block}
+
+.match-card-body{
+  padding:14px 10px;
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  gap:6px;
+}
+.team-side{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
+.team-jersey{width:40px;height:34px;flex-shrink:0}
+.team-jersey svg{width:100%;height:100%;filter:drop-shadow(0 2px 5px rgba(0,0,0,.18))}
+.team-label{font-family:"Syne",sans-serif;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;text-align:center;color:var(--text);line-height:1.25;width:100%;word-break:break-word;hyphens:auto}
+
+.score-center{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0}
+.vs-txt{font-family:"Syne",sans-serif;font-size:.58rem;font-weight:800;color:var(--text3);letter-spacing:.1em}
+.score-row{display:flex;align-items:center;gap:6px}
+.score-block{display:flex;flex-direction:column;align-items:center;gap:3px}
+.score-num{font-family:"Syne",sans-serif;font-size:1.7rem;font-weight:800;color:var(--text);width:42px;height:42px;background:var(--surface2);border:2px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.match-card.filled .score-num{background:#f0fdf4;border-color:#a7f3d0;color:var(--green)}
+.step-btn{width:32px;height:32px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;font-weight:800;color:var(--text2);transition:all .15s;flex-shrink:0;-webkit-tap-highlight-color:transparent;user-select:none;line-height:1}
+.step-btn:active{background:var(--accent);border-color:var(--accent);color:#fff;transform:scale(.92)}
+.step-btn.plus:active{background:var(--green);border-color:var(--green)}
+.score-sep{font-family:"Syne",sans-serif;font-size:1.4rem;font-weight:800;color:var(--text3);line-height:1;padding:0 2px}
+
+/* ── GOLDEN GOAL ── */
+.gg-section{max-width:520px;margin:0 auto;padding:0 14px 12px}
+.gg-card{background:var(--surface);border:1.5px solid #fde68a;border-radius:16px;padding:16px 14px;transition:opacity .3s}
+.gg-card.locked{opacity:.45;pointer-events:none;user-select:none}
+.gg-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.gg-ico{font-size:1.4rem}
+.gg-title{font-family:"Syne",sans-serif;font-weight:800;font-size:.88rem;color:var(--text)}
+.gg-sub{font-size:.7rem;color:var(--text2);margin-top:1px}
+.gg-input-row{display:flex;align-items:center;gap:10px}
+.gg-stepper{display:flex;align-items:center;gap:8px;flex:1}
+.gg-num{font-family:"Syne",sans-serif;font-size:1.5rem;font-weight:800;color:#b45309;background:#fef3c7;border:2px solid #fde68a;border-radius:10px;min-width:56px;height:44px;display:flex;align-items:center;justify-content:center;text-align:center}
+.gg-minute-label{font-size:.7rem;color:var(--text2);font-weight:600}
+.gg-step-btn{width:36px;height:36px;border:1.5px solid #fde68a;border-radius:8px;background:#fef9ec;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.1rem;font-weight:800;color:#b45309;transition:all .15s;-webkit-tap-highlight-color:transparent;user-select:none}
+.gg-step-btn:active{background:#fde68a;transform:scale(.9)}
+
+/* ── TIEBREAKER CARD ── */
+.tb-section{max-width:520px;margin:0 auto;padding:0 14px 12px}
+
+.tb-card{
+  background:var(--surface);
+  border:1.5px solid #c7d2fe;
+  border-radius:16px;
+  overflow:hidden;
+  transition:opacity .3s;
+}
+.tb-card.locked{opacity:.45;pointer-events:none;user-select:none}
+
+.tb-card-head{
+  background:#eef2ff;
+  padding:10px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+[data-theme="dark"] .tb-card-head{background:#1e2040}
+
+.tb-head-left{display:flex;align-items:center;gap:8px}
+.tb-ico{font-size:1.2rem}
+.tb-title{font-family:"Syne",sans-serif;font-weight:800;font-size:.88rem;color:var(--text)}
+.tb-sub{font-size:.68rem;color:var(--text2);margin-top:1px}
+.tb-badge{
+  background:#6366f1;color:#fff;
+  border-radius:100px;font-size:.6rem;font-weight:800;
+  padding:3px 9px;letter-spacing:.04em;white-space:nowrap;
+}
+
+.tb-body{padding:14px}
+.tb-divider{height:1px;background:var(--border);margin:10px 0}
+
+.tb-q{display:flex;flex-direction:column;gap:7px}
+.tb-q-label{font-size:.7rem;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:5px}
+.tb-q-label .tb-qnum{
+  width:18px;height:18px;
+  background:#6366f1;color:#fff;
+  border-radius:50%;font-size:.58rem;font-weight:800;
+  display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+
+/* Pill selector */
+.tb-pills{display:flex;flex-wrap:wrap;gap:7px}
+.tb-pill{
+  padding:7px 13px;
+  border:1.5px solid var(--border);
+  border-radius:100px;
+  font-size:.72rem;font-weight:700;
+  color:var(--text2);
+  background:var(--surface2);
+  cursor:pointer;
+  transition:all .18s;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+  display:flex;align-items:center;gap:5px;
+}
+.tb-pill:active{transform:scale(.94)}
+.tb-pill.selected{
+  background:#6366f1;border-color:#6366f1;color:#fff;
+}
+/* Results states for tiebreaker pills */
+.tb-pill.tb-correct{
+  background:#dcfce7 !important;border-color:#16a34a !important;color:#15803d !important;
+  pointer-events:none;
+}
+.tb-pill.tb-wrong{
+  background:#fee2e2 !important;border-color:#fca5a5 !important;color:#dc2626 !important;
+  opacity:.75;pointer-events:none;
+}
+.tb-pill.tb-correct-answer{
+  background:#dcfce7 !important;border-color:#16a34a !important;color:#15803d !important;
+  pointer-events:none;
+}
+
+/* ── RESULTS MODE — score box states ── */
+.score-num.correct{
+  background:#dcfce7 !important;
+  border-color:#16a34a !important;
+  color:#15803d !important;
+}
+.score-num.wrong{
+  background:#fff0f0 !important;
+  border-color:#fca5a5 !important;
+  color:#dc2626 !important;
+  opacity:.75;
+}
+.match-card.result-correct{border-color:#16a34a !important;}
+.match-card.result-wrong{border-color:#fca5a5 !important;}
+.match-card.result-wrong .match-done-chip{background:#fee2e2;color:#dc2626}
+
+/* Non-entrant score display — greyed out, no interaction */
+.score-num.no-entry{
+  background:var(--surface2) !important;
+  border-color:var(--border) !important;
+  color:var(--text3) !important;
+  opacity:.6;
+}
+.match-card.no-entry-result{border-color:var(--border) !important;opacity:.65;}
+.match-card.no-entry-result .match-done-chip{display:none !important;}
+
+/* Actual score chip shown below user's score in results mode */
+.actual-score-row{
+  display:flex;align-items:center;justify-content:center;
+  gap:6px;margin-top:6px;
+}
+.actual-score-label{font-size:.6rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+.actual-score-val{
+  font-family:"Syne",sans-serif;font-size:.8rem;font-weight:800;
+  background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:7px;padding:2px 10px;color:var(--text2);
+}
+
+/* ── RESULTS BANNER ── */
+.results-banner{
+  max-width:520px;margin:0 auto;
+  padding:0 14px 10px;
+}
+.results-banner-card{
+  border-radius:14px;
+  padding:14px 16px;
+  display:flex;align-items:center;gap:12px;
+}
+.results-banner-card.all-correct{
+  background:#dcfce7;border:1.5px solid #86efac;
+}
+.results-banner-card.some-correct{
+  background:#fef9c3;border:1.5px solid #fde047;
+}
+.results-banner-card.none-correct{
+  background:#fee2e2;border:1.5px solid #fca5a5;
+}
+.results-banner-card.not-entered{
+  background:var(--surface2);border:1.5px solid var(--border);
+}
+.rb-ico{font-size:1.8rem;flex-shrink:0}
+.rb-msg{flex:1}
+.rb-msg strong{
+  font-family:"Syne",sans-serif;font-size:.9rem;font-weight:800;display:block;
+}
+.rb-msg span{font-size:.72rem;color:var(--text2);margin-top:2px;display:block}
+.rb-score-badge{
+  font-family:"Syne",sans-serif;font-size:1.3rem;font-weight:800;
+  color:var(--text);
+  background:#fff;border-radius:10px;
+  padding:6px 14px;flex-shrink:0;
+  border:1.5px solid var(--border);
+}
+
+/* ── EDIT BAR ── */
+.edit-bar{max-width:520px;margin:0 auto;padding:0 14px 16px;display:none}
+.edit-bar.show{display:block}
+.edit-btn{width:100%;background:transparent;border:2px solid var(--accent);color:var(--accent);border-radius:12px;padding:13px;font-family:"Syne",sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;letter-spacing:.04em;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.edit-btn:hover{background:var(--accent);color:#fff}
+
+/* ── STICKY SUBMIT ── */
+.submit-bar{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 16px;z-index:50}
+.submit-bar-inner{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.submit-summary{display:flex;align-items:center;justify-content:space-between;font-size:.76rem;color:var(--text2)}
+.submit-summary strong{color:var(--text);font-family:"Syne",sans-serif}
+.submit-btn{background:var(--green);color:#fff;border:none;border-radius:12px;padding:15px;font-family:"Syne",sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;width:100%;letter-spacing:.04em;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.submit-btn:hover{opacity:.9}
+.submit-btn:disabled{background:#ccc;cursor:not-allowed}
+.submit-btn.loading{background:#888}
+
+/* ── ALREADY ENTERED BANNER ── */
+.entry-edit-bar{background:#fef3c7;border-bottom:1px solid #fde68a;padding:9px 16px;text-align:center;font-size:.76rem;font-weight:700;color:#b45309;display:none}
+.entry-edit-bar.show{display:block}
+
+/* ── SUCCESS OVERLAY ── */
+.success-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center;padding:24px}
+.success-overlay.show{display:flex}
+.success-card{background:var(--surface);border-radius:24px;padding:36px 24px;max-width:340px;width:100%;text-align:center}
+.sc-ico{font-size:3.5rem;display:block;margin-bottom:14px;animation:pop .4s ease}
+@keyframes pop{0%{transform:scale(0)}80%{transform:scale(1.15)}100%{transform:scale(1)}}
+.sc-title{font-family:"Syne",sans-serif;font-size:1.3rem;font-weight:800;color:var(--green);margin-bottom:8px}
+.sc-msg{font-size:.82rem;color:var(--text2);line-height:1.6;margin-bottom:20px}
+.sc-scores{background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:18px;display:flex;flex-direction:column;gap:7px}
+.sc-score-row{display:flex;align-items:center;justify-content:space-between;font-size:.78rem}
+.sc-score-row .teams{color:var(--text2);flex:1;text-align:left;font-size:.72rem}
+.sc-score-row .score{font-family:"Syne",sans-serif;font-weight:800;color:var(--text);font-size:.88rem;flex-shrink:0;background:var(--bg);border-radius:6px;padding:2px 10px}
+.sc-tb-row{display:flex;align-items:center;justify-content:space-between;font-size:.72rem;padding-top:6px;border-top:1px solid var(--border)}
+.sc-tb-row .tb-lbl{color:var(--text2)}
+.sc-tb-row .tb-val{font-family:"Syne",sans-serif;font-weight:800;color:#6366f1;font-size:.78rem;background:#eef2ff;border-radius:6px;padding:2px 10px}
+.sc-btn{background:var(--green);color:#fff;border:none;border-radius:12px;padding:14px;font-family:"DM Sans",sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;width:100%}
+
+/* ── LOADING / EMPTY ── */
+.loading-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 24px;gap:12px;color:var(--text2);font-size:.85rem;text-align:center}
+.spin{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.closed-state{text-align:center;padding:60px 24px}
+.closed-state .ico{font-size:3rem;display:block;margin-bottom:12px}
+.closed-state strong{display:block;font-family:"Syne",sans-serif;font-weight:800;font-size:1rem;color:var(--text);margin-bottom:6px}
+.closed-state p{font-size:.82rem;color:var(--text2)}
+</style>
+</head>
+<body>
+
+<!-- SVG defs -->
+<svg width="0" height="0" style="position:absolute;overflow:hidden">
+  <defs>
+    <radialGradient id="jvol" cx="50%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="white" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="black" stop-opacity="0.18"/>
+    </radialGradient>
+  </defs>
+</svg>
+
+<!-- NAV -->
+<nav>
+  <a class="back-btn" href="predict.html">&#x2190; Back</a>
+  <div class="logo">&#x1F1FF;&#x1F1F2; Win<span>Zed</span></div>
+  <div class="token-pill"><span class="tp-amt" id="nav-tokens">K0.00</span></div>
+</nav>
+
+<!-- ALREADY ENTERED BANNER -->
+<div class="entry-edit-bar" id="top-edit-bar">✏️ You've already entered — scroll down to edit your predictions</div>
+
+<!-- ROUND BANNER -->
+<div class="round-banner" id="round-banner" style="display:none">
+  <div class="rb-left">
+    <div class="rb-name" id="rb-name">Round 1</div>
+    <div class="rb-date" id="rb-date">Loading...</div>
+  </div>
+  <div class="rb-cost">K5 to Enter</div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div class="progress-bar-wrap" id="progress-bar-wrap" style="display:none">
+  <div class="pb-label">
+    <span>Your Predictions</span>
+    <span id="pb-count">0 / 6 filled</span>
+  </div>
+  <div class="pb-track"><div class="pb-fill" id="pb-fill" style="width:0%"></div></div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="main-content">
+  <div class="loading-state" id="loading-state">
+    <div class="spin"></div>
+    <div>Loading round...</div>
+  </div>
+</div>
+
+<!-- SUCCESS OVERLAY -->
+<div class="success-overlay" id="success-overlay">
+  <div class="success-card">
+    <span class="sc-ico">🎉</span>
+    <div class="sc-title">Prediction Submitted!</div>
+    <div class="sc-msg">Good luck! Your scores are locked in. Results announced after all matches are played.</div>
+    <div class="sc-scores" id="sc-scores-list"></div>
+    <button class="sc-btn" onclick="document.getElementById('success-overlay').classList.remove('show');lockCards();">Done ⚽</button>
+  </div>
+</div>
+
+<script>
+firebase.initializeApp({apiKey:"AIzaSyA-vSOEKp4v6aPud9enjiA-AzuQVl53Wto",authDomain:"winzed-413be.firebaseapp.com",projectId:"winzed-413be",storageBucket:"winzed-413be.firebasestorage.app",messagingSenderId:"1092518915452",appId:"1:1092518915452:web:016a41f0d250afe7d288f9"});
+var auth=firebase.auth(), db=firebase.firestore();
+var currentUser=null, userProfile=null;
+var activeRound=null, roundId=null;
+var scores=[];
+var goldenGoal=45;
+var existingEntryId=null;
+var isLocked=false;
+
+// tbPick = { team: string|null, half: string|null, origin: string|null }
+var tbPick={team:null,half:null,origin:null};
+var resultsData=null;
+var tbResultsData=null; // { team: string, half: string, origin: string } — admin's correct answers
+
+var SHORT_NAMES={
+  "Wolverhampton":"Wolves","Wolverhampton Wanderers":"Wolves",
+  "Manchester United":"Man Utd","Manchester City":"Man City",
+  "Tottenham Hotspur":"Spurs","Newcastle United":"Newcastle",
+  "West Ham United":"West Ham","Brighton & Hove Albion":"Brighton",
+  "Brighton and Hove Albion":"Brighton","Nottingham Forest":"Nott'm Forest"
+};
+function shortName(n){return SHORT_NAMES[n]||n;}
+
+(function(){var t=localStorage.getItem("wz-theme");if(t)document.documentElement.setAttribute("data-theme",t);})();
+
+auth.onAuthStateChanged(function(user){
+  if(!user){window.location.href="index.html";return;}
+  currentUser=user;
+  db.collection("users").doc(user.uid).get().then(function(snap){
+    if(!snap.exists){window.location.href="index.html";return;}
+    userProfile=snap.data();
+    document.getElementById("nav-tokens").textContent="K"+(parseFloat(userProfile.tokens)||0).toFixed(2);
+    loadRound();
+  });
+});
+
+// ── JERSEY ──
+var JP='M30,10 Q50,22 70,10 L95,30 L85,45 L75,40 L75,80 L25,80 L25,40 L15,45 L5,30 Z';
+var KIT={
+  "Arsenal":{c:"#EF0107",sleeves:"#FFFFFF"},"Manchester United":{c:"#DA291C"},"Man United":{c:"#DA291C"},"Man Utd":{c:"#DA291C"},
+  "Chelsea":{c:"#034694"},"Liverpool":{c:"#C8102E"},"Manchester City":{c:"#6CABDD"},"Man City":{c:"#6CABDD"},
+  "Tottenham":{c:"#FFFFFF",s:true},"Spurs":{c:"#FFFFFF",s:true},"Aston Villa":{c:"#670E36",sleeves:"#95BFE5"},
+  "Newcastle":{c:"#FFFFFF",stripes:"#000000"},"Brighton":{c:"#FFFFFF",stripes:"#0057B8"},
+  "West Ham":{c:"#7A263A",sleeves:"#2DAFE5"},"Everon":{c:"#003399"},"Wolves":{c:"#FDB913"},"Wolverhampton":{c:"#FDB913"},
+  "Leicester":{c:"#003090"},"Fulham":{c:"#FFFFFF",s:true},"Crystal Palace":{c:"#1B458F",stripes:"#C4122E"},
+  "Bournemouth":{c:"#DA291C",stripes:"#000000"},"Brentford":{c:"#E30613",stripes:"#FFFFFF"},
+  "Nottingham Forest":{c:"#DD0000"},"Ipswich":{c:"#005DAA"},"Southampton":{c:"#D71920",stripes:"#FFFFFF"},
+  "Leeds":{c:"#FFFFFF",s:true},"Sheffield United":{c:"#EE2737",stripes:"#FFFFFF"},
+  "Real Madrid":{c:"#FFFFFF",s:true},"Barcelona":{c:"#004D98",stripes:"#A50044"},"Barca":{c:"#004D98",stripes:"#A50044"},
+  "Atletico Madrid":{c:"#CF321F",stripes:"#FFFFFF"},"Bayern Munich":{c:"#DC052D"},"Dortmund":{c:"#FDE100"},"BVB":{c:"#FDE100"},
+  "Juventus":{c:"#000000",stripes:"#FFFFFF"},"AC Milan":{c:"#FB090B",stripes:"#000000"},"Inter Milan":{c:"#0066B2",stripes:"#000000"},
+  "PSG":{c:"#004170"},"Ajax":{c:"#FFFFFF",sleeves:"#D2122E"},"Napoli":{c:"#71D0FA"},"Roma":{c:"#8E1F2F"},
+  "Benfica":{c:"#ED1C24"},"Porto":{c:"#005CA9",stripes:"#FFFFFF"},"Celtic":{c:"#008853",stripes:"#FFFFFF"},"Rangers":{c:"#1B458F"},
+  "Brazil":{c:"#FEDD00"},"Argentina":{c:"#75AADB",stripes:"#FFFFFF"},"France":{c:"#002395"},"Germany":{c:"#FFFFFF",s:true},
+  "Italy":{c:"#004FB0"},"Spain":{c:"#F00000"},"England":{c:"#FFFFFF",s:true},
+  "default":{c:"#888888"}
+};
+function getKit(name){for(var k in KIT){if(k!=="default"&&(name||"").toLowerCase().indexOf(k.toLowerCase())>=0)return KIT[k];}return KIT["default"];}
+function jerseyHTML(name){
+  var kit=getKit(name),uid='j'+Math.random().toString(36).slice(2,7),defs='',fill=kit.c,extra='';
+  var vol='<radialGradient id="v'+uid+'" cx="50%" cy="35%" r="60%"><stop offset="0%" stop-color="white" stop-opacity="0.3"/><stop offset="100%" stop-color="black" stop-opacity="0.2"/></radialGradient>';
+  if(kit.stripes){defs+='<pattern id="p'+uid+'" width="16" height="100" patternUnits="userSpaceOnUse"><rect width="8" height="100" fill="'+kit.c+'"/><rect x="8" width="8" height="100" fill="'+kit.stripes+'"/></pattern>';fill='url(#p'+uid+')';}
+  if(kit.sleeves){defs+='<clipPath id="c'+uid+'"><path d="'+JP+'"/></clipPath>';extra='<rect x="0" y="0" width="25" height="100" fill="'+kit.sleeves+'" clip-path="url(#c'+uid+')"/><rect x="75" y="0" width="25" height="100" fill="'+kit.sleeves+'" clip-path="url(#c'+uid+')"/>';}
+  var stroke=(kit.c==='#FFFFFF'||kit.s)?' stroke="#ccc" stroke-width="1"':'';
+  return '<svg viewBox="0 0 100 85"><defs>'+vol+defs+'</defs><path d="'+JP+'" fill="'+fill+'"'+stroke+'/>'+extra+'<path d="'+JP+'" fill="url(#v'+uid+')"/></svg>';
+}
+
+function isEditingLocked(){
+  if(!activeRound||!activeRound.startISO)return false;
+  var start=new Date(activeRound.startISO).getTime();
+  return Date.now()>=(start-(2*60*60*1000));
+}
+
+// ── LOAD ROUND ──
+function loadRound(){
+  db.collection("predict-rounds").where("active","==",true).limit(1).get().then(function(snap){
+    document.getElementById("loading-state").style.display="none";
+    if(snap.empty){showClosed("No active round","Check back soon for the next round!");return;}
+    var doc=snap.docs[0];
+    activeRound=doc.data();
+    roundId=doc.id;
+    if(!activeRound.open){showClosed("Round Closed","Predictions are closed for this round. Check back for the next one!");return;}
+    scores=activeRound.matches.map(function(){return{home:0,away:0};});
+    db.collection("predict-entries")
+      .where("uid","==",currentUser.uid)
+      .where("roundId","==",roundId)
+      .limit(1).get()
+      .then(function(eSnap){
+        if(!eSnap.empty){
+          var entry=eSnap.docs[0].data();
+          existingEntryId=eSnap.docs[0].id;
+          scores=entry.scores||scores;
+          goldenGoal=entry.goldenGoal||45;
+          if(entry.tiebreaker){tbPick=entry.tiebreaker;}
+          showRound();
+          lockCards();
+          fetchAndApplyResults();
+        } else {
+          // No entry — show round for browsing, but check if results are out
+          showRound();
+          fetchAndApplyResults();
+        }
+      });
+  }).catch(function(e){showClosed("Error","Could not load round: "+e.message);});
+}
+
+function showClosed(title,msg){
+  document.getElementById("main-content").innerHTML=
+    '<div class="closed-state"><span class="ico">🚫</span><strong>'+title+'</strong><p>'+msg+'</p></div>';
+}
+
+function showRound(){
+  var r=activeRound;
+  document.getElementById("rb-name").textContent=r.name||"Round 1";
+  document.getElementById("rb-date").textContent=r.startDateLabel||(r.startISO?new Date(r.startISO).toLocaleString():"Open for entries");
+  document.getElementById("round-banner").style.display="flex";
+  document.getElementById("progress-bar-wrap").style.display="block";
+  renderMatchCards(r.matches);
+}
+
+function renderMatchCards(matches){
+  var mc=document.getElementById("main-content");
+  mc.innerHTML="";
+  var wrap=document.createElement("div");
+  wrap.className="matches-wrap";
+
+  matches.forEach(function(m,i){
+    var card=document.createElement("div");
+    var isFilled=scores[i].home>0||scores[i].away>0;
+    card.className="match-card"+(isFilled?" filled":"");
+    card.id="mc-"+i;
+    var hName=shortName(m.home||"TBA"),aName=shortName(m.away||"TBA");
+    card.innerHTML=
+      '<div class="match-card-head">'+
+        '<span class="match-num">Match '+(i+1)+'</span>'+
+        '<span class="match-done-chip">✓ Set</span>'+
+      '</div>'+
+      '<div class="match-card-body">'+
+        '<div class="team-side">'+
+          '<div class="team-jersey">'+jerseyHTML(m.home||"")+'</div>'+
+          '<div class="team-label">'+hName+'</div>'+
+        '</div>'+
+        '<div class="score-center">'+
+          '<span class="vs-txt">VS</span>'+
+          '<div class="score-row">'+
+            '<div class="score-block">'+
+              '<button class="step-btn plus" ontouchstart="" onclick="change('+i+',\'home\',1)">+</button>'+
+              '<div class="score-num" id="sh-'+i+'">'+scores[i].home+'</div>'+
+              '<button class="step-btn minus" ontouchstart="" onclick="change('+i+',\'home\',-1)">−</button>'+
+            '</div>'+
+            '<span class="score-sep">:</span>'+
+            '<div class="score-block">'+
+              '<button class="step-btn plus" ontouchstart="" onclick="change('+i+',\'away\',1)">+</button>'+
+              '<div class="score-num" id="sa-'+i+'">'+scores[i].away+'</div>'+
+              '<button class="step-btn minus" ontouchstart="" onclick="change('+i+',\'away\',-1)">−</button>'+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="team-side">'+
+          '<div class="team-jersey">'+jerseyHTML(m.away||"")+'</div>'+
+          '<div class="team-label">'+aName+'</div>'+
+        '</div>'+
+      '</div>';
+    wrap.appendChild(card);
+  });
+
+  mc.appendChild(wrap);
+
+  // ── TIEBREAKER ──
+  renderTiebreaker(mc, matches);
+
+  // ── GOLDEN GOAL ──
+  var ggSec=document.createElement("div");
+  ggSec.className="gg-section";
+  ggSec.id="gg-section";
+  ggSec.innerHTML=
+    '<div class="gg-card" id="gg-card">'+
+      '<div class="gg-head">'+
+        '<span class="gg-ico">⚽</span>'+
+        '<div><div class="gg-title">Golden Goal</div><div class="gg-sub">Predict the minute of the 1st goal (tiebreaker)</div></div>'+
+      '</div>'+
+      '<div class="gg-input-row">'+
+        '<div class="gg-stepper">'+
+          '<button class="gg-step-btn" ontouchstart="" onclick="changeGG(-5)">−5</button>'+
+          '<button class="gg-step-btn" ontouchstart="" onclick="changeGG(-1)">−</button>'+
+          '<div class="gg-num" id="gg-num">'+goldenGoal+'</div>'+
+          '<button class="gg-step-btn" ontouchstart="" onclick="changeGG(1)">+</button>'+
+          '<button class="gg-step-btn" ontouchstart="" onclick="changeGG(5)">+5</button>'+
+          '<span class="gg-minute-label">min</span>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  mc.appendChild(ggSec);
+
+  // Edit button
+  var editBar=document.createElement("div");
+  editBar.className="edit-bar";
+  editBar.id="edit-bar";
+  if(!isEditingLocked()){
+    editBar.innerHTML='<button class="edit-btn" onclick="unlockCards()">✏️ Edit Predictions</button>';
+  }
+  mc.appendChild(editBar);
+
+  var spacer=document.createElement("div");
+  spacer.style.height="20px";
+  mc.appendChild(spacer);
+
+  renderSubmitBar();
+  updateProgress();
+}
+
+// ── RENDER TIEBREAKER ──
+function renderTiebreaker(container, matches){
+  var tbSec=document.createElement("div");
+  tbSec.className="tb-section";
+  tbSec.id="tb-section";
+
+  var tb=activeRound.tiebreaker||null;
+  var tbMatchIdx=(tb&&tb.matchIndex!=null)?tb.matchIndex:0;
+  var tbMatch=matches[tbMatchIdx]||matches[0]||{home:"Home",away:"Away"};
+  var hName=shortName(tbMatch.home||"Home");
+  var aName=shortName(tbMatch.away||"Away");
+  var matchLabel='Match '+(tbMatchIdx+1)+': '+hName+' vs '+aName;
+
+  tbSec.innerHTML=
+    '<div class="tb-card" id="tb-card">'+
+      '<div class="tb-card-head">'+
+        '<div class="tb-head-left">'+
+          '<span class="tb-ico">🔮</span>'+
+          '<div>'+
+            '<div class="tb-title">Tiebreaker Questions</div>'+
+            '<div class="tb-sub">'+matchLabel+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<span class="tb-badge">BONUS</span>'+
+      '</div>'+
+      '<div class="tb-body">'+
+        '<div class="tb-q" id="tb-q1">'+
+          '<div class="tb-q-label"><span class="tb-qnum">1</span> Which team scores first?</div>'+
+          '<div class="tb-pills" id="tb-pills-team">'+
+            '<div class="tb-pill'+(tbPick.team===hName?' selected':'')+'" ontouchstart="" onclick="tbSelect(\'team\',\''+hName+'\')">'+hName+'</div>'+
+            '<div class="tb-pill'+(tbPick.team===aName?' selected':'')+'" ontouchstart="" onclick="tbSelect(\'team\',\''+aName+'\')">'+aName+'</div>'+
+            '<div class="tb-pill'+(tbPick.team==='No Goal'?' selected':'')+'" ontouchstart="" onclick="tbSelect(\'team\',\'No Goal\')">No Goal</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="tb-divider"></div>'+
+        '<div class="tb-q" id="tb-q2">'+
+          '<div class="tb-q-label"><span class="tb-qnum">2</span> Which half is it scored in?</div>'+
+          '<div class="tb-pills" id="tb-pills-half">'+
+            '<div class="tb-pill'+(tbPick.half==='1st Half'?' selected':'')+'" ontouchstart="" onclick="tbSelect(\'half\',\'1st Half\')">1st Half</div>'+
+            '<div class="tb-pill'+(tbPick.half==='2nd Half'?' selected':'')+'" ontouchstart="" onclick="tbSelect(\'half\',\'2nd Half\')">2nd Half</div>'+
+            '<div class="tb-pill'+(tbPick.half==='Extra Time'?' selected':'')+'" ontouchstart="" onclick="tbSelect(\'half\',\'Extra Time\')">Extra Time</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="tb-divider"></div>'+
+        '<div class="tb-q" id="tb-q3">'+
+          '<div class="tb-q-label"><span class="tb-qnum">3</span> Set piece or open play?</div>'+
+          '<div class="tb-pills" id="tb-pills-origin">'+
+            '<div class="tb-pill'+(tbPick.origin==='Open Play'?' selected':'')+'" ontouchstart="" onclick="tbSelect(\'origin\',\'Open Play\')">Open Play</div>'+
+            '<div class="tb-pill'+(tbPick.origin==='Set Piece'?' selected':'')+'" ontouchstart="" onclick="tbSelect(\'origin\',\'Set Piece\')">Set Piece</div>'+
+            '<div class="tb-pill'+(tbPick.origin==='Penalty'?' selected':'')+'" ontouchstart="" onclick="tbSelect(\'origin\',\'Penalty\')">Penalty</div>'+
+            '<div class="tb-pill'+(tbPick.origin==='Own Goal'?' selected':'')+'" ontouchstart="" onclick="tbSelect(\'origin\',\'Own Goal\')">Own Goal</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+
+  container.appendChild(tbSec);
+}
+
+// ── FETCH & APPLY RESULTS ──
+// predict-results/{roundId} structure:
+// {
+//   scores: [{home:1,away:2}, ...],          — actual match scores
+//   tiebreaker: { team: "Arsenal", half: "1st Half", origin: "Set Piece" }  — correct TB answers
+// }
+function fetchAndApplyResults(){
+  if(!roundId)return;
+  db.collection("predict-results").doc(roundId).get().then(function(snap){
+    if(!snap.exists)return;
+    var data=snap.data();
+    if(!data.scores||!data.scores.length)return;
+    resultsData=data.scores;
+    tbResultsData=data.tiebreaker||null; // may be null if admin hasn't filled it yet
+    applyResults();
+  }).catch(function(){/* silent */});
+}
+
+function applyResults(){
+  if(!resultsData||!activeRound)return;
+
+  var isEntrant=!!existingEntryId;
+  var correctCount=0;
+  var tbCorrectCount=0;
+
+  // ── Score results ──
+  activeRound.matches.forEach(function(m,i){
+    var actual=resultsData[i];
+    if(!actual)return;
+    var actualH=parseInt(actual.home)||0;
+    var actualA=parseInt(actual.away)||0;
+
+    var homeEl=document.getElementById("sh-"+i);
+    var awayEl=document.getElementById("sa-"+i);
+    var card=document.getElementById("mc-"+i);
+    if(!homeEl||!awayEl||!card)return;
+
+    if(isEntrant){
+      // Entered: show green/red based on correctness
+      var predH=scores[i]?scores[i].home:null;
+      var predA=scores[i]?scores[i].away:null;
+      var isCorrect=(predH!==null&&predA!==null&&parseInt(predH)===actualH&&parseInt(predA)===actualA);
+
+      if(isCorrect){
+        homeEl.classList.add("correct");homeEl.classList.remove("wrong");
+        awayEl.classList.add("correct");awayEl.classList.remove("wrong");
+        card.classList.add("result-correct");card.classList.remove("result-wrong","no-entry-result");
+        correctCount++;
+      } else {
+        homeEl.classList.add("wrong");homeEl.classList.remove("correct");
+        awayEl.classList.add("wrong");awayEl.classList.remove("correct");
+        card.classList.add("result-wrong");card.classList.remove("result-correct","no-entry-result");
+      }
+    } else {
+      // Non-entrant: grey out their zeroes, just show actual result
+      homeEl.classList.add("no-entry");
+      awayEl.classList.add("no-entry");
+      card.classList.add("no-entry-result");
+      card.classList.remove("result-correct","result-wrong","filled");
+    }
+
+    // Show actual score underneath — inject once, no duplicates
+    var scoreCenter=card.querySelector(".score-center");
+    if(scoreCenter&&!scoreCenter.querySelector(".actual-score-row")){
+      var actualRow=document.createElement("div");
+      actualRow.className="actual-score-row";
+      actualRow.innerHTML=
+        '<span class="actual-score-label">Result</span>'+
+        '<span class="actual-score-val">'+actualH+' – '+actualA+'</span>';
+      scoreCenter.appendChild(actualRow);
+    }
+
+    card.style.pointerEvents="none";
+    card.style.userSelect="none";
+  });
+
+  // ── Tiebreaker results (if admin has submitted correct answers) ──
+  if(tbResultsData){
+    tbCorrectCount=applyTiebreakerResults(isEntrant);
+  }
+
+  // Hide interactive controls
+  document.querySelectorAll(".step-btn,.gg-step-btn").forEach(function(b){b.style.display="none";});
+  var submitBar=document.querySelector(".submit-bar");
+  if(submitBar)submitBar.style.display="none";
+  var editBar=document.getElementById("edit-bar");
+  if(editBar)editBar.style.display="none";
+  var ggCard=document.getElementById("gg-card");
+  if(ggCard)ggCard.style.pointerEvents="none";
+  var tbCard=document.getElementById("tb-card");
+  if(tbCard)tbCard.style.pointerEvents="none";
+  var pbWrap=document.getElementById("progress-bar-wrap");
+  if(pbWrap)pbWrap.style.display="none";
+
+  // ── Results banner ──
+  var existing=document.getElementById("results-banner");
+  if(existing)existing.remove();
+
+  var total=activeRound.matches.length;
+  var totalPossible=total+(tbResultsData?3:0); // 3 TB questions
+  var totalCorrect=correctCount+tbCorrectCount;
+  var banner=document.createElement("div");
+  banner.id="results-banner";
+  banner.className="results-banner";
+
+  if(!isEntrant){
+    // Non-entrant view
+    banner.innerHTML=
+      '<div class="results-banner-card not-entered">'+
+        '<span class="rb-ico">👀</span>'+
+        '<div class="rb-msg">'+
+          '<strong>Results are in</strong>'+
+          '<span>You didn\'t enter this round — enter next time for a chance to win!</span>'+
+        '</div>'+
+      '</div>';
+  } else {
+    // Entrant view
+    var bannerClass=correctCount===total?"all-correct":correctCount>0?"some-correct":"none-correct";
+    var ico=correctCount===total?"🏆":correctCount>0?"⚽":"😬";
+    var scoreMsg=correctCount===total?"Perfect score! You nailed every result!":
+                 correctCount>0?"You got "+correctCount+"/"+total+" scores correct":
+                 "No exact scores this round — better luck next time!";
+    var tbMsg=tbResultsData?" · "+tbCorrectCount+"/3 tiebreaker":"";
+    banner.innerHTML=
+      '<div class="results-banner-card '+bannerClass+'">'+
+        '<span class="rb-ico">'+ico+'</span>'+
+        '<div class="rb-msg">'+
+          '<strong>'+scoreMsg+'</strong>'+
+          '<span>Total: '+totalCorrect+'/'+totalPossible+' points'+tbMsg+'</span>'+
+        '</div>'+
+        '<div class="rb-score-badge">'+totalCorrect+'/'+totalPossible+'</div>'+
+      '</div>';
+  }
+
+  var matchesWrap=document.querySelector(".matches-wrap");
+  if(matchesWrap&&matchesWrap.parentNode){
+    matchesWrap.parentNode.insertBefore(banner,matchesWrap);
+  }
+}
+
+// ── APPLY TIEBREAKER RESULTS ──
+// Returns the number of correct tiebreaker picks (0-3)
+function applyTiebreakerResults(isEntrant){
+  if(!tbResultsData)return 0;
+  var fields=['team','half','origin'];
+  var pillsIds=['tb-pills-team','tb-pills-half','tb-pills-origin'];
+  var correct=0;
+
+  fields.forEach(function(field,fi){
+    var correctAnswer=tbResultsData[field]||null;
+    var userPick=isEntrant?(tbPick[field]||null):null;
+    var container=document.getElementById(pillsIds[fi]);
+    if(!container)return;
+
+    Array.from(container.children).forEach(function(pill){
+      var pillText=pill.textContent.trim();
+      var isCorrectAnswer=(correctAnswer&&pillText===correctAnswer);
+      var isUserPick=(userPick&&pillText===userPick);
+
+      if(isEntrant){
+        if(isUserPick&&isCorrectAnswer){
+          // User picked correctly
+          pill.classList.add("tb-correct");
+          pill.classList.remove("selected","tb-wrong");
+          pill.innerHTML='✅ '+pillText;
+          correct++;
+        } else if(isUserPick&&!isCorrectAnswer){
+          // User picked wrong
+          pill.classList.add("tb-wrong");
+          pill.classList.remove("selected","tb-correct");
+          pill.innerHTML='❌ '+pillText;
+        } else if(isCorrectAnswer&&!isUserPick){
+          // Show the correct answer they missed
+          pill.classList.add("tb-correct-answer");
+          pill.innerHTML='✅ '+pillText;
+        }
+        // Unselected wrong pills: leave neutral
+      } else {
+        // Non-entrant: only highlight the correct answer
+        if(isCorrectAnswer){
+          pill.classList.add("tb-correct-answer");
+          pill.innerHTML='✅ '+pillText;
+        } else {
+          pill.style.opacity='.4';
+          pill.style.pointerEvents='none';
+        }
+      }
+    });
+  });
+
+  return correct;
+}
+
+function tbSelect(field,value){
+  if(isLocked)return;
+  tbPick[field]=value;
+  var pillsId='tb-pills-'+field;
+  var container=document.getElementById(pillsId);
+  if(!container)return;
+  Array.from(container.children).forEach(function(pill){
+    pill.classList.toggle('selected',pill.textContent.trim()===value);
+  });
+}
+
+function renderSubmitBar(){
+  var existing=document.querySelector(".submit-bar");
+  if(existing)existing.remove();
+  var bar=document.createElement("div");
+  bar.className="submit-bar";
+  bar.innerHTML=
+    '<div class="submit-bar-inner">'+
+      '<div class="submit-summary">'+
+        '<span id="sb-filled">0 of 6 matches predicted</span>'+
+        '<strong>K5 entry fee</strong>'+
+      '</div>'+
+      '<button class="submit-btn" id="submit-btn" onclick="submitEntry()">'+
+        '⚽ Submit My Predictions'+
+      '</button>'+
+    '</div>';
+  document.body.appendChild(bar);
+}
+
+function lockCards(){
+  isLocked=true;
+  document.querySelectorAll(".match-card").forEach(function(c){c.classList.add("locked");});
+  var ggCard=document.getElementById("gg-card");
+  if(ggCard)ggCard.classList.add("locked");
+  var tbCard=document.getElementById("tb-card");
+  if(tbCard)tbCard.classList.add("locked");
+  if(!isEditingLocked()){
+    var eb=document.getElementById("edit-bar");
+    if(eb)eb.classList.add("show");
+  }
+  var bar=document.querySelector(".submit-bar");
+  if(bar)bar.style.display="none";
+  document.getElementById("top-edit-bar").classList.remove("show");
+}
+
+function unlockCards(){
+  isLocked=false;
+  document.querySelectorAll(".match-card").forEach(function(c){c.classList.remove("locked");});
+  var ggCard=document.getElementById("gg-card");
+  if(ggCard)ggCard.classList.remove("locked");
+  var tbCard=document.getElementById("tb-card");
+  if(tbCard)tbCard.classList.remove("locked");
+  var eb=document.getElementById("edit-bar");
+  if(eb)eb.classList.remove("show");
+  var bar=document.querySelector(".submit-bar");
+  if(bar)bar.style.display="block";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function change(matchIdx,side,delta){
+  if(isLocked)return;
+  var cur=scores[matchIdx][side];
+  var next=Math.max(0,Math.min(20,cur+delta));
+  scores[matchIdx][side]=next;
+  document.getElementById("s"+side[0]+"-"+matchIdx).textContent=next;
+  document.getElementById("mc-"+matchIdx).classList.add("filled");
+  updateProgress();
+}
+
+function changeGG(delta){
+  if(isLocked)return;
+  goldenGoal=Math.max(1,Math.min(90,goldenGoal+delta));
+  document.getElementById("gg-num").textContent=goldenGoal;
+}
+
+function updateProgress(){
+  var filled=document.querySelectorAll(".match-card.filled").length;
+  var pct=Math.round((filled/6)*100);
+  var pb=document.getElementById("pb-fill");
+  if(pb)pb.style.width=pct+"%";
+  var pc=document.getElementById("pb-count");
+  if(pc)pc.textContent=filled+" / 6 filled";
+  var sbf=document.getElementById("sb-filled");
+  if(sbf)sbf.textContent=filled+" of 6 matches predicted";
+  var btn=document.getElementById("submit-btn");
+  if(btn)btn.disabled=filled<6;
+}
+
+function submitEntry(){
+  var btn=document.getElementById("submit-btn");
+  var filledCount=document.querySelectorAll(".match-card.filled").length;
+  if(filledCount<6){alert("Please set scores for all 6 matches!");return;}
+  var tokens=userProfile?parseFloat(userProfile.tokens)||0:0;
+  if(!existingEntryId&&tokens<5){
+    alert("You need at least K5 tokens to enter. Add tokens from the Predict page.");
+    return;
+  }
+  btn.disabled=true;btn.textContent="Submitting...";btn.classList.add("loading");
+  var entryData={
+    uid:currentUser.uid,
+    name:userProfile.name,
+    phone:userProfile.phone,
+    roundId:roundId,
+    roundName:activeRound.name||"Round 1",
+    scores:scores,
+    goldenGoal:goldenGoal,
+    tiebreaker:tbPick,
+    submittedAt:new Date().toISOString()
+  };
+  var doEntry;
+  if(existingEntryId){
+    doEntry=db.collection("predict-entries").doc(existingEntryId).update(entryData);
+  } else {
+    var newTokens=tokens-5;
+    doEntry=db.collection("users").doc(currentUser.uid).update({tokens:newTokens})
+      .then(function(){return db.collection("predict-entries").add(entryData);})
+      .then(function(ref){
+        existingEntryId=ref.id;
+        userProfile.tokens=newTokens;
+        document.getElementById("nav-tokens").textContent="K"+newTokens.toFixed(2);
+      });
+  }
+  doEntry.then(function(){
+    showSuccess();
+    btn.disabled=false;btn.textContent="⚽ Submit My Predictions";btn.classList.remove("loading");
+  }).catch(function(e){
+    alert("Failed to submit: "+e.message);
+    btn.disabled=false;btn.textContent="⚽ Submit My Predictions";btn.classList.remove("loading");
+  });
+}
+
+function showSuccess(){
+  var list=document.getElementById("sc-scores-list");
+  var scoresHTML=activeRound.matches.map(function(m,i){
+    return '<div class="sc-score-row">'+
+      '<span class="teams">'+shortName(m.home||"TBA")+' vs '+shortName(m.away||"TBA")+'</span>'+
+      '<span class="score">'+scores[i].home+' – '+scores[i].away+'</span>'+
+    '</div>';
+  }).join('');
+  var tbHTML='';
+  if(tbPick.team||tbPick.half||tbPick.origin){
+    var parts=[];
+    if(tbPick.team)parts.push(tbPick.team);
+    if(tbPick.half)parts.push(tbPick.half);
+    if(tbPick.origin)parts.push(tbPick.origin);
+    tbHTML='<div class="sc-tb-row">'+
+      '<span class="tb-lbl">🔮 Tiebreaker</span>'+
+      '<span class="tb-val">'+parts.join(' · ')+'</span>'+
+    '</div>';
+  }
+  list.innerHTML=scoresHTML+tbHTML;
+  document.getElementById("success-overlay").classList.add("show");
+}
+</script>
+</body>
+</html>

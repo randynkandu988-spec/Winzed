@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WinZed — Megga Pick</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+[data-theme="light"]{
+  --bg:#f5f3ef;--surface:#ffffff;--surface2:#edeae4;--border:#d8d4cc;
+  --text:#111010;--text2:#6b6660;--text3:#9c9690;--nav-bg:#ffffff;
+  --accent:#d94e18;--green:#1a6e35;--gold:#b8851f;--menu-bg:#111010;
+  --megga:#7c3aed;--megga2:#5b21b6;--megga-light:#ede9ff;--megga-border:#c4b5fd;
+  --box-bg:#ffffff;--box-open-bg:#ede9ff;--box-match-shadow:rgba(124,58,237,0.22);
+  --box-break-bg:#fff0f0;--box-break-border:#fca5a5;
+}
+[data-theme="dark"]{
+  --bg:#0e0d0f;--surface:#1a1820;--surface2:#221f2a;--border:#2e2a38;
+  --text:#edeae4;--text2:#8a857d;--text3:#5a5550;--nav-bg:#141214;
+  --accent:#e8581a;--green:#1e8040;--gold:#c9922a;--menu-bg:#0e0d0f;
+  --megga:#a78bfa;--megga2:#7c3aed;--megga-light:#1e1835;--megga-border:#4c3d8f;
+  --box-bg:#1a1820;--box-open-bg:#1e1835;--box-match-shadow:rgba(167,139,250,0.18);
+  --box-break-bg:#1a0a0a;--box-break-border:#7f1d1d;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background .25s,color .25s}
+#page{display:none}
+
+#ov{display:flex;position:fixed;inset:0;background:var(--bg);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .4s}
+#ov.gone{opacity:0;pointer-events:none}
+.spin{width:34px;height:34px;border:2.5px solid var(--border);border-top-color:var(--megga);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.ov-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;letter-spacing:-.5px}
+.ov-logo em{font-style:normal;color:var(--megga)}
+
+/* MODAL OVERLAY */
+.modal-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.55);
+  z-index:5000;
+  align-items:center;justify-content:center;
+  padding:20px;
+}
+.modal-overlay.open{display:flex}
+.modal-box{
+  background:var(--surface);
+  border:2px solid var(--megga-border);
+  border-radius:20px;
+  padding:26px 22px 22px;
+  max-width:320px;width:100%;
+  text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.3);
+  animation:popIn .35s cubic-bezier(.34,1.56,.64,1);
+}
+.modal-ico{font-size:2.8rem;display:block;margin-bottom:10px}
+.modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;margin-bottom:6px;color:var(--text)}
+.modal-body{font-size:.8rem;color:var(--text2);line-height:1.6;margin-bottom:18px}
+.modal-prize{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--megga);margin:8px 0 4px}
+.modal-prize-lbl{font-size:.7rem;color:var(--text3);margin-bottom:14px}
+.modal-btns{display:flex;flex-direction:column;gap:9px}
+.modal-btn-win{
+  background:linear-gradient(135deg,var(--megga) 0%,var(--megga2) 100%);
+  color:#fff;border:none;border-radius:12px;
+  padding:14px;font-family:'Syne',sans-serif;font-size:.95rem;font-weight:800;
+  cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 16px rgba(124,58,237,.35);
+}
+.modal-btn-win:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(124,58,237,.45)}
+.modal-btn-lose{
+  background:transparent;border:1.5px solid var(--border);
+  color:var(--text2);border-radius:12px;
+  padding:12px;font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:600;
+  cursor:pointer;transition:all .2s;
+}
+.modal-btn-lose:hover{border-color:var(--accent);color:var(--accent)}
+.modal-timer{font-size:.7rem;color:var(--text3);margin-top:10px}
+.modal-timer strong{color:var(--megga);font-weight:700}
+
+.menu-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200}
+.menu-overlay.open{display:block}
+.side-menu{position:fixed;right:0;top:0;bottom:0;width:255px;background:var(--menu-bg);border-left:1px solid rgba(255,255,255,.07);z-index:201;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+.side-menu.open{transform:translateX(0)}
+.menu-top{padding:22px 18px 18px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between}
+.menu-av{width:38px;height:38px;background:var(--megga);border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.95rem;font-weight:800;flex-shrink:0}
+.menu-name{font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;color:#edeae4}
+.menu-phone{font-size:.68rem;color:rgba(255,255,255,.32);margin-top:1px}
+.menu-close{background:rgba(255,255,255,.07);border:none;border-radius:8px;width:29px;height:29px;cursor:pointer;color:rgba(255,255,255,.38);font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.menu-close:hover{background:rgba(255,255,255,.13);color:#edeae4}
+.menu-items{padding:12px 10px;display:flex;flex-direction:column;gap:2px;flex:1}
+.menu-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;cursor:pointer;transition:all .18s;border:none;background:transparent;width:100%;text-align:left;color:rgba(255,255,255,.52);font-family:'DM Sans',sans-serif;font-size:.83rem;font-weight:500}
+.menu-item:hover{background:rgba(255,255,255,.07);color:#edeae4}
+.menu-item .mi{font-size:.9rem;width:19px;text-align:center;flex-shrink:0}
+.menu-item.danger{color:#f87171}
+.menu-item.danger:hover{background:rgba(220,38,38,.14)}
+.menu-divider{height:1px;background:rgba(255,255,255,.06);margin:5px 10px}
+.menu-bottom{padding:12px 18px;border-top:1px solid rgba(255,255,255,.06)}
+.menu-ver{font-size:.61rem;color:rgba(255,255,255,.18);text-align:center}
+
+nav{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 6px;background:var(--nav-bg);position:sticky;top:0;z-index:100;transition:background .25s;border-bottom:1px solid var(--border)}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;letter-spacing:-.5px;display:flex;align-items:center;gap:5px;color:var(--text);white-space:nowrap}
+.logo span{color:var(--accent)}
+.hamburger{background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;flex-shrink:0}
+.hbar{width:13px;height:1.5px;background:var(--text);border-radius:2px}
+.token-pill{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1.5px solid var(--border);border-radius:100px;padding:4px 4px 4px 10px}
+.tp-amt{font-family:'Syne',sans-serif;font-size:.78rem;font-weight:800;color:var(--text)}
+.tp-add{background:var(--green);color:#fff;border:none;border-radius:100px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;cursor:pointer;transition:all .2s;flex-shrink:0}
+.tp-add:hover{background:#145c2a;transform:scale(1.1)}
+
+.tab-bar{display:flex;align-items:center;justify-content:space-around;background:var(--nav-bg);border-bottom:1px solid var(--border);position:sticky;top:49px;z-index:99;transition:background .25s}
+.tab-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 8px;font-size:.68rem;font-weight:600;color:var(--text2);cursor:pointer;border:none;background:transparent;font-family:'DM Sans',sans-serif;position:relative;transition:color .2s;flex:1;white-space:nowrap;text-decoration:none}
+.tab-item .tab-ico{font-size:1.05rem}
+.tab-item.active{color:var(--megga)}
+.tab-item.active::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:28px;height:2.5px;background:var(--megga);border-radius:2px 2px 0 0}
+
+.page-wrap{max-width:460px;margin:0 auto;padding:16px 14px 100px}
+
+.top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.megga-ttl{font-family:'Syne',sans-serif;font-size:1.25rem;font-weight:800;letter-spacing:-.4px}
+.megga-ttl em{font-style:normal;color:var(--megga)}
+.week-chip{background:var(--megga-light);border:1.5px solid var(--megga-border);border-radius:100px;padding:4px 12px;font-size:.7rem;font-weight:700;color:var(--megga)}
+
+.status-strip{border-radius:10px;padding:10px 13px;margin-bottom:14px;font-size:.78rem;font-weight:600;display:flex;align-items:center;gap:8px;transition:all .3s}
+.status-strip.idle{background:var(--surface2);border:1px solid var(--border);color:var(--text2)}
+.status-strip.playing{background:var(--megga-light);border:1.5px solid var(--megga-border);color:var(--megga)}
+.status-strip.win{background:#dcfce7;border:1.5px solid #86efac;color:var(--green)}
+.status-strip.lose{background:#fff5f0;border:1.5px solid #fed7aa;color:#c2410c}
+[data-theme="dark"] .status-strip.win{background:rgba(30,128,64,.15);border-color:rgba(30,128,64,.3);color:#4ade80}
+[data-theme="dark"] .status-strip.lose{background:rgba(194,65,12,.12);border-color:rgba(194,65,12,.3);color:#fb923c}
+
+/* 3×3 BOX GRID */
+.boxes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
+.box{aspect-ratio:1;border-radius:16px;border:2px solid var(--border);background:var(--box-bg);cursor:pointer;position:relative;overflow:hidden;transition:border-color .18s,box-shadow .18s,transform .12s;-webkit-tap-highlight-color:transparent;user-select:none}
+.box:not(.locked):not(.revealed):hover{border-color:var(--megga);box-shadow:0 4px 16px var(--box-match-shadow);transform:scale(1.04)}
+.box.locked{opacity:.32;cursor:not-allowed;pointer-events:none}
+
+.box-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .42s cubic-bezier(.4,0,.2,1)}
+.box.revealed .box-inner{transform:rotateY(180deg)}
+.box-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px;border-radius:14px}
+.box-front{background:var(--surface2)}
+.box-front .bico{font-size:1.75rem;line-height:1}
+.box-front .bnum{font-size:.56rem;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase}
+.box-back{background:var(--box-open-bg);transform:rotateY(180deg)}
+.box-back .bval{font-family:'Syne',sans-serif;font-size:.88rem;font-weight:800;color:var(--megga);text-align:center;line-height:1.15;word-break:break-word}
+.box-back .btag{font-size:.5rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);margin-top:2px}
+
+.box.match{border-color:var(--megga);background:var(--box-open-bg);box-shadow:0 0 0 3px var(--box-match-shadow),0 4px 18px var(--box-match-shadow)}
+.box.match .box-back{background:var(--megga-light)}
+@keyframes matchPop{0%{transform:rotateY(180deg) scale(.9)}60%{transform:rotateY(180deg) scale(1.06)}100%{transform:rotateY(180deg) scale(1)}}
+.box.match.revealed .box-inner{animation:matchPop .45s cubic-bezier(.34,1.56,.64,1)}
+
+.box.nomatch{border-color:var(--box-break-border)}
+.box.nomatch .box-back{background:var(--box-break-bg)}
+.box.nomatch .box-back .bval{color:var(--accent)}
+
+.picks-row{display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:10px}
+.pick-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:all .28s}
+.pick-dot.filled{background:var(--megga);border-color:var(--megga)}
+.pick-dot.win{background:var(--green);border-color:var(--green)}
+.pick-dot.lose{background:var(--accent);border-color:var(--accent)}
+.picks-lbl{font-size:.7rem;font-weight:600;color:var(--text3)}
+
+.result-card{border-radius:14px;padding:16px;margin-bottom:12px;text-align:center;display:none;animation:popIn .38s cubic-bezier(.34,1.56,.64,1)}
+.result-card.show{display:block}
+@keyframes popIn{0%{opacity:0;transform:scale(.88)}100%{opacity:1;transform:scale(1)}}
+.result-card.win-card{background:var(--megga-light);border:2px solid var(--megga-border)}
+.result-card.lose-card{background:#fff8f2;border:2px solid #fed7aa}
+[data-theme="dark"] .result-card.lose-card{background:#180f05;border-color:#78350f}
+.rc-ico{font-size:1.9rem;display:block;margin-bottom:5px}
+.rc-amt{font-family:'Syne',sans-serif;font-size:1.9rem;font-weight:800;color:var(--megga);line-height:1;margin-bottom:3px}
+.rc-amt.lose{color:var(--accent)}
+.rc-title{font-size:.86rem;font-weight:700;color:var(--text);margin-bottom:3px}
+.rc-msg{font-size:.73rem;color:var(--text2);line-height:1.55}
+
+.btn-next{background:var(--surface2);border:1.5px solid var(--border);color:var(--text);border-radius:11px;padding:12px;font-family:'DM Sans',sans-serif;font-size:.87rem;font-weight:700;cursor:pointer;transition:all .2s;width:100%;margin-bottom:10px;display:none}
+.btn-next.show{display:block}
+.btn-next:hover{background:var(--border)}
+
+.timer-strip{background:var(--megga-light);border:1.5px solid var(--megga-border);border-radius:10px;padding:10px 14px;margin-bottom:10px;display:none;align-items:center;justify-content:space-between;gap:10px}
+.timer-strip.show{display:flex}
+.ts-lbl{font-size:.72rem;font-weight:700;color:var(--megga)}
+.ts-lbl small{display:block;font-size:.62rem;font-weight:400;color:var(--text2);margin-top:1px}
+.ts-time{font-family:'Syne',sans-serif;font-size:1.25rem;font-weight:800;color:var(--megga)}
+.ts-time.urgent{color:var(--accent);animation:blink .55s ease-in-out infinite alternate}
+@keyframes blink{to{opacity:.35}}
+
+.chances-strip{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 13px;margin-bottom:10px;display:none;align-items:center;justify-content:space-between}
+.chances-strip.show{display:flex}
+.cs-lbl{font-size:.72rem;font-weight:600;color:var(--text2)}
+.cs-dots{display:flex;gap:5px}
+.cs-dot{width:11px;height:11px;border-radius:50%;background:var(--megga);transition:all .28s}
+.cs-dot.used{background:var(--border)}
+
+.cooldown-strip{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:10px;display:none;align-items:center;justify-content:space-between}
+.cooldown-strip.show{display:flex}
+.cd-lbl{font-size:.72rem;font-weight:600;color:var(--text2)}
+.cd-lbl strong{display:block;font-size:.79rem;color:var(--text);margin-bottom:1px}
+.cd-time{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--text3)}
+
+.warn-strip{background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;padding:10px 13px;margin-bottom:10px;font-size:.74rem;color:#78350f;line-height:1.55;display:none;align-items:flex-start;gap:8px}
+.warn-strip.show{display:flex}
+[data-theme="dark"] .warn-strip{background:#1a1200;border-color:#6b4f00;color:#fbbf24}
+
+/* ACTION BUTTONS */
+.actions-section{display:flex;gap:9px;margin-bottom:14px}
+
+.btn-daily{
+  flex:1;
+  background:linear-gradient(135deg,var(--megga) 0%,var(--megga2) 100%);
+  color:#fff;border:none;border-radius:12px;
+  padding:11px 14px;
+  font-family:'DM Sans',sans-serif;cursor:pointer;
+  transition:all .22s;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  box-shadow:0 3px 14px rgba(124,58,237,.3);
+  min-width:0;
+}
+.btn-daily:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 20px rgba(124,58,237,.4)}
+.btn-daily:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;filter:grayscale(.3)}
+.bd-text{min-width:0;flex:1}
+.bd-text .bd-title{font-size:.82rem;font-weight:700;text-align:left;display:block;margin-bottom:1px;white-space:nowrap}
+.bd-text .bd-sub{font-size:.6rem;opacity:.75;font-weight:400;display:block;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* FIX: Pack button — badge aligned right, no overflow */
+.btn-pack{
+  flex:1;
+  background:var(--surface);
+  border:2px solid var(--megga-border);
+  color:var(--text);border-radius:12px;
+  padding:11px 10px 11px 14px;
+  font-family:'DM Sans',sans-serif;cursor:pointer;
+  transition:all .22s;
+  display:flex;align-items:center;gap:8px;
+  min-width:0;
+}
+.btn-pack:hover:not(:disabled){border-color:var(--megga);background:var(--megga-light)}
+.btn-pack:disabled{opacity:.35;cursor:not-allowed;filter:grayscale(.3)}
+.bp-text{min-width:0;flex:1}
+.bp-text .bp-title{font-size:.82rem;font-weight:700;color:var(--text);display:block;margin-bottom:1px;text-align:left;white-space:nowrap}
+.bp-text .bp-sub{font-size:.6rem;color:var(--text2);font-weight:400;display:block;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* FIX: badge — flex-shrink:0 + explicit sizing so it never wraps or overflows */
+.bp-badge{
+  background:var(--megga);color:#fff;
+  border-radius:7px;padding:4px 8px;
+  font-family:'Syne',sans-serif;font-size:.75rem;font-weight:800;
+  flex-shrink:0;
+  white-space:nowrap;
+  line-height:1.2;
+  display:flex;align-items:center;justify-content:center;
+}
+
+.pack-uses-note{font-size:.66rem;color:var(--text3);text-align:center;margin-top:-8px;margin-bottom:6px}
+
+.hist-section{margin-top:4px}
+.hist-title{font-family:'Syne',sans-serif;font-size:.85rem;font-weight:800;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.hist-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hi-l{display:flex;align-items:center;gap:8px}
+.hi-ico{font-size:1rem}
+.hi-info strong{display:block;font-size:.78rem;font-weight:700;color:var(--text);margin-bottom:1px}
+.hi-info span{font-size:.67rem;color:var(--text2)}
+.hi-amt{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:800}
+.hi-amt.win{color:var(--megga)}.hi-amt.lose{color:var(--accent)}
+
+.conf-root{position:fixed;inset:0;pointer-events:none;z-index:8888;overflow:hidden;display:none}
+.conf-root.show{display:block}
+.cp{position:absolute;border-radius:2px;animation:cf linear forwards}
+@keyframes cf{0%{transform:translateY(-30px) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--text);color:var(--bg);padding:11px 20px;border-radius:100px;font-size:.82rem;font-weight:600;z-index:9999;opacity:0;transition:all .28s;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.18)}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.toast.ok{background:var(--green)}.toast.fail{background:var(--accent)}.toast.megga{background:var(--megga)}
+
+footer{border-top:1px solid var(--border);padding:14px 16px;font-size:.69rem;color:var(--text3);text-align:center}
+</style>
+</head>
+<body>
+
+<div id="ov"><div class="ov-logo">Win<span style="color:var(--accent)">Zed</span> <em>Megga</em></div><div class="spin"></div></div>
+<div class="conf-root" id="conf-root"></div>
+
+<!-- ALL CHANCES USED MODAL -->
+<div class="modal-overlay" id="chances-modal">
+  <div class="modal-box">
+    <span class="modal-ico">🎰</span>
+    <div class="modal-title" id="modal-title">All Chances Used!</div>
+    <div class="modal-body">You've used all your picks for this round. Ready to go for the big one?</div>
+    <div class="modal-prize" id="modal-prize">K1,000,000</div>
+    <div class="modal-prize-lbl">Grand Megga Prize</div>
+    <div class="modal-btns">
+      <button class="modal-btn-win" onclick="goForMegga()">🔥 WIN MEGGA K1,000,000!</button>
+      <button class="modal-btn-lose" onclick="giveUpAndLose()">😔 Give Up &amp; Walk Away</button>
+    </div>
+    <div class="modal-timer" id="modal-timer-row" style="display:none">
+      Pack timer: <strong id="modal-pack-time">—</strong> remaining
+    </div>
+  </div>
+</div>
+
+<div class="menu-overlay" id="menu-overlay" onclick="closeMenu()"></div>
+<div class="side-menu" id="side-menu">
+  <div class="menu-top">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="menu-av" id="menu-av">?</div>
+      <div><div class="menu-name" id="menu-name">...</div><div class="menu-phone" id="menu-phone">...</div></div>
+    </div>
+    <button class="menu-close" onclick="closeMenu()">✕</button>
+  </div>
+  <div class="menu-items">
+    <button class="menu-item" onclick="toggleDark();closeMenu()"><span class="mi" id="dm-icon">🌙</span>Dark / Light Mode</button>
+    <button class="menu-item" onclick="window.location.href='index.html'"><span class="mi">🏠</span>Home</button>
+    <div class="menu-divider"></div>
+    <button class="menu-item danger" onclick="doLogout()"><span class="mi">🚪</span>Log Out</button>
+  </div>
+  <div class="menu-bottom"><div class="menu-ver">WinZed · Kabwe, Zambia 🇿🇲 · 2026</div></div>
+</div>
+
+<div id="page">
+<nav>
+  <div class="logo">🇿🇲 Win<span>Zed</span></div>
+  <div style="display:flex;align-items:center;gap:9px">
+    <div class="token-pill"><span class="tp-amt" id="nav-tokens">K0</span><button class="tp-add" onclick="showToast('Go to Home to add tokens','')">+</button></div>
+    <button class="hamburger" onclick="openMenu()"><div class="hbar"></div><div class="hbar"></div><div class="hbar"></div></button>
+  </div>
+</nav>
+
+<div class="tab-bar">
+  <a class="tab-item" href="main.html"><span class="tab-ico">🏠</span>Home</a>
+  <a class="tab-item" href="predict.html"><span class="tab-ico">⚽</span>Predict</a>
+  <a class="tab-item" href="wheel.html"><span class="tab-ico">🎡</span>Wheel</a>
+  <button class="tab-item active"><span class="tab-ico">🎰</span>Megga</button>
+</div>
+
+<div class="page-wrap">
+
+  <div class="top-row">
+    <div class="megga-ttl">🎰 <em>Megga</em> Pick</div>
+    <div class="week-chip" id="week-chip">Week 1</div>
+  </div>
+
+  <div class="status-strip idle" id="status-strip">
+    <span>⏳</span><span id="status-txt">Tap a play button below to start</span>
+  </div>
+
+  <div class="actions-section">
+    <button class="btn-daily" id="btn-daily" onclick="startDaily()">
+      <div class="bd-text">
+        <span class="bd-title">Daily Play 🎁</span>
+        <span class="bd-sub" id="daily-sub">Free · Once every 24h</span>
+      </div>
+    </button>
+
+    <button class="btn-pack" id="btn-pack" onclick="buyPack()">
+      <div class="bp-text">
+        <span class="bp-title">3-Chance Pack</span>
+        <span class="bp-sub" id="pack-sub">3 plays · 3 hrs</span>
+      </div>
+      <div class="bp-badge">K10</div>
+    </button>
+  </div>
+
+  <div class="pack-uses-note" id="pack-uses-note"></div>
+
+  <div class="boxes-grid" id="boxes-grid"></div>
+
+  <div class="picks-row">
+    <span class="picks-lbl">Picks:</span>
+    <div class="pick-dot" id="pd0"></div>
+    <div class="pick-dot" id="pd1"></div>
+    <div class="pick-dot" id="pd2"></div>
+  </div>
+
+  <div class="result-card" id="result-card">
+    <span class="rc-ico" id="rc-ico">🎉</span>
+    <div class="rc-amt" id="rc-amt">+0</div>
+    <div class="rc-title" id="rc-title">—</div>
+    <div class="rc-msg" id="rc-msg"></div>
+  </div>
+
+  <button class="btn-next" id="btn-next" onclick="nextChance()">Play Next Chance →</button>
+
+  <div class="timer-strip" id="timer-strip">
+    <div class="ts-lbl">⏱ Pack expires in<small>Use your chances or lose them!</small></div>
+    <div class="ts-time" id="pack-timer">3:00:00</div>
+  </div>
+
+  <div class="chances-strip" id="chances-strip">
+    <span class="cs-lbl">Chances left</span>
+    <div class="cs-dots" id="cs-dots"></div>
+  </div>
+
+  <div class="cooldown-strip" id="cooldown-strip">
+    <div class="cd-lbl"><strong>Daily play used ✓</strong>Next play in</div>
+    <div class="cd-time" id="daily-timer">24:00:00</div>
+  </div>
+
+  <div class="warn-strip" id="warn-strip">
+    <span>⚠️</span>
+    <span><strong>3-hour expiry rule:</strong> Once you buy a 3-Chance Pack you have exactly 3 hours to use all 3 plays. If the timer runs out your K10 tokens are forfeited. No refunds.</span>
+  </div>
+
+  <div class="hist-section">
+    <div class="hist-title">📋 Recent Plays</div>
+    <div id="hist-list"><div style="font-size:.8rem;color:var(--text3);text-align:center;padding:20px 0">No plays yet — start below!</div></div>
+  </div>
+
+</div>
+<footer>© 2026 WinZed · Kabwe, Zambia 🇿🇲 · <a href="legal.html" style="color:var(--text3)">Legal</a></footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyA-vSOEKp4v6aPud9enjiA-AzuQVl53Wto",
+  authDomain:"winzed-413be.firebaseapp.com",
+  projectId:"winzed-413be",
+  storageBucket:"winzed-413be.firebasestorage.app",
+  messagingSenderId:"1092518915452",
+  appId:"1:1092518915452:web:016a41f0d250afe7d288f9"
+});
+var auth=firebase.auth(), db=firebase.firestore();
+var currentUser=null, userProfile=null, meggaData=null, _authChecked=false;
+
+// GAME STATE
+// totalChances = how many chances total in this session (sum of all active packs + daily)
+// chancesLeft  = how many rounds still to play
+// packChancesLeft in Firestore = remaining across sessions
+var gs={active:false,totalChances:1,chancesLeft:1,picks:[],values:[],teaserVal:0,roundDone:false};
+var losePattern = 0; // which pick will be the odd one out
+
+var ICONS=['🎁','🎁','🎁','🎁️','🎁','🎁','🎁','🎁','🎁'];
+
+// AMOUNT POOL
+var AMOUNTS=[1000000,7000,6000,5000,4000,3000,500,700,300,900,200,40,30,50,20,10,1,60];
+
+var packTimerInt=null, dailyTimerInt=null;
+// Track remaining pack ms for modal display
+var _packMsLeft=0;
+
+/* THEME */
+(function(){var t=localStorage.getItem('wz-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();
+function toggleDark(){var h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');localStorage.setItem('wz-theme',d?'light':'dark');var i=document.getElementById('dm-icon');if(i)i.textContent=d?'🌙':'☀️';}
+
+/* MENU */
+function openMenu(){document.getElementById('side-menu').classList.add('open');document.getElementById('menu-overlay').classList.add('open');}
+function closeMenu(){document.getElementById('side-menu').classList.remove('open');document.getElementById('menu-overlay').classList.remove('open');}
+function doLogout(){auth.signOut().then(function(){window.location.href='index.html';});}
+
+/* AUTH */
+auth.onAuthStateChanged(function(user){
+  if(!_authChecked){_authChecked=true;if(user){currentUser=user;loadUser(user);}return;}
+  if(!user){window.location.href='index.html';return;}
+  currentUser=user;loadUser(user);
+});
+
+function loadUser(user){
+  db.collection('users').doc(user.uid).get()
+    .then(function(snap){
+      if(!snap.exists){window.location.href='index.html';return;}
+      userProfile=snap.data();
+      document.getElementById('menu-av').textContent=userProfile.name.charAt(0).toUpperCase();
+      document.getElementById('menu-name').textContent=userProfile.name;
+      document.getElementById('menu-phone').textContent=userProfile.phone;
+      document.getElementById('dm-icon').textContent=document.documentElement.getAttribute('data-theme')==='dark'?'☀️':'🌙';
+      updateNavTokens(userProfile.tokens||0);
+      return db.collection('megga-players').doc(user.uid).get();
+    })
+    .then(function(snap){
+      meggaData=snap&&snap.exists?snap.data():{
+        firstPlayedAt:null,totalPlays:0,totalWon:0,
+        dailyLastUsed:null,
+        packUsedToday:0,packLastDay:null,
+        packExpiry:null,packChancesLeft:0,
+        history:[]
+      };
+      buildGrid();
+      renderWeekChip();
+      renderDailyBtn();
+      renderPackBtn();
+      renderHistory();
+
+      var _dailyAvail=isDailyAvailable();
+      var _hasActivePack=hasActivePack();
+
+      if(_dailyAvail&&!_hasActivePack){
+        autoStartDaily();
+      } else {
+        restorePackState();
+      }
+      document.getElementById('page').style.display='block';
+      document.getElementById('ov').classList.add('gone');
+    })
+    .catch(function(err){
+      console.error('loadUser error:',err);
+      // Show page anyway so user isn't stuck on spinner
+      document.getElementById('page').style.display='block';
+      document.getElementById('ov').classList.add('gone');
+      // Show the actual error so it's debuggable
+      var strip=document.getElementById('status-strip');
+      if(strip){strip.className='status-strip lose';strip.innerHTML='<span>⚠️</span><span>Load error: '+(err&&err.message?err.message:String(err))+'</span>';}
+    });
+}
+
+function updateNavTokens(t){document.getElementById('nav-tokens').textContent='K'+(parseFloat(t)||0).toFixed(0);}
+
+function isDailyAvailable(){
+  var lu=meggaData.dailyLastUsed;
+  return !lu||(Date.now()-new Date(lu))>=864e5;
+}
+
+// FIX: hasActivePack checks packChancesLeft > 0 AND valid expiry
+function hasActivePack(){
+  return (meggaData.packChancesLeft||0)>0 && meggaData.packExpiry && new Date(meggaData.packExpiry)>new Date();
+}
+
+/* WEEK */
+function getWeek(){
+  if(!meggaData||!meggaData.firstPlayedAt) return 1;
+  var days=Math.floor((Date.now()-new Date(meggaData.firstPlayedAt))/864e5);
+  return Math.min(Math.floor(days/7)+1,3);
+}
+function renderWeekChip(){
+  var w=getWeek();
+  document.getElementById('week-chip').textContent=w===3?'Week 3 🔥':'Week '+w;
+}
+
+/* BUILD GRID */
+function buildGrid(){
+  var grid=document.getElementById('boxes-grid');
+  grid.innerHTML='';
+  var icons=ICONS.slice();shuffle(icons);
+  for(var i=0;i<9;i++){
+    (function(idx){
+      var box=document.createElement('div');
+      box.className='box locked';
+      box.id='box-'+idx;
+      box.innerHTML='<div class="box-inner"><div class="box-face box-front"><div class="bico">'+icons[idx]+'</div><div class="bnum">#'+(idx+1)+'</div></div><div class="box-face box-back"><div class="bval" id="bval-'+idx+'">—</div><div class="btag">tokens</div></div></div>';
+      box.onclick=function(){pickBox(idx);};
+      grid.appendChild(box);
+    })(i);
+  }
+}
+
+function resetGrid(){
+  var icons=ICONS.slice();shuffle(icons);
+  for(var i=0;i<9;i++){
+    var box=document.getElementById('box-'+i);
+    if(box){
+      box.className='box';
+      var inner=box.querySelector('.box-inner');
+      if(inner){inner.style.animation='';void inner.offsetWidth;}
+      var bico=box.querySelector('.bico');
+      if(bico) bico.textContent=icons[i];
+      var bval=document.getElementById('bval-'+i);
+      if(bval){bval.textContent='—';bval.className='bval';}
+    }
+  }
+}
+
+function lockAllBoxes(){
+  for(var i=0;i<9;i++){var b=document.getElementById('box-'+i);if(b&&!b.classList.contains('revealed'))b.classList.add('locked');}
+}
+
+/* GENERATE VALUES */
+function generateRound(){
+  var pool = AMOUNTS.slice();
+  shuffle(pool);
+  gs.values = pool.slice(0,9);
+
+  // teaser comes from ANY value (no pattern)
+  gs.teaserVal = gs.values[Math.floor(Math.random()*gs.values.length)];
+losePattern = Math.floor(Math.random() * 3); // 0=first breaks, 1=second breaks, 2=third breaks
+
+  gs.picks = [];
+  gs.roundDone = false;
+}
+
+function fmtAmt(n){return 'K'+Number(n).toLocaleString('en-ZM');}
+
+/* PICK A BOX */
+function pickBox(idx){
+  if(!gs.active||gs.roundDone) return;
+  if(gs.picks.indexOf(idx)!==-1) return;
+  if(gs.picks.length>=3) return;
+  gs.picks.push(idx);
+  var n=gs.picks.length;
+  var box=document.getElementById('box-'+idx);
+  var valEl=document.getElementById('bval-'+idx);
+  var week=getWeek();
+  var displayVal;
+var isOddOne = (n-1) === losePattern;
+  if(isOddOne){
+    displayVal = getDiffVal(gs.teaserVal);
+    gs.values[idx] = displayVal;
+    valEl.textContent = fmtAmt(displayVal);
+    box.classList.add('revealed','nomatch');
+    updatePickDots(n-1,'filled');
+  } else {
+    displayVal = gs.teaserVal;
+    gs.values[idx] = displayVal;
+    valEl.textContent = fmtAmt(displayVal);
+    box.classList.add('revealed');
+    setTimeout(function(){box.classList.add('match');},260);
+    updatePickDots(n-1,'filled');
+  }
+
+  if(n===3){
+    lockAllBoxes();
+    gs.roundDone = true;
+    updatePickDots(2, isOddOne ? 'lose' : 'filled');
+    setTimeout(function(){
+      gs.chancesLeft--;
+      if(gs.chancesLeft === 2){
+        showToast("So close! 2 chances remaining");
+        setTimeout(nextChance, 1200);
+      } else if(gs.chancesLeft === 1){
+        showToast("1 chance remaining");
+        var nb = document.getElementById('btn-next');
+        nb.textContent = "Get +3 more chances for K10";
+        nb.classList.add('show');
+        nb.onclick = buyPack;
+      } else {
+        showTryAgainModal();
+      }
+    }, 700);
+  }
+}  
+
+function showTryAgainModal(){
+
+function showTryAgainModal(){
+  var modal = document.getElementById('chances-modal');
+
+  document.getElementById('modal-title').textContent = "Try Again";
+  document.getElementById('modal-prize').textContent = "No win";
+
+  // 🔥 Change buttons
+  var btns = modal.querySelector('.modal-btns');
+  btns.innerHTML = `
+    <button class="modal-btn-win" onclick="buyPack()">Get 3 more chances (K10)</button>
+    <button class="modal-btn-lose" onclick="closeChancesModal()">Close</button>
+  `;
+
+  modal.classList.add('open');
+}
+function updatePickDots(upTo,state){
+  for(var i=0;i<=upTo;i++){
+    var d=document.getElementById('pd'+i);
+    if(!d) continue;
+    d.className='pick-dot '+(i===upTo?state:'filled');
+  }
+}
+function resetPickDots(){for(var i=0;i<3;i++){var d=document.getElementById('pd'+i);if(d)d.className='pick-dot';}}
+
+/* ═══════════════════════════════════════════
+   CHANCES MODAL — Win Megga / Give Up
+═══════════════════════════════════════════ */
+function showChancesModal(){
+  // Update modal prize display
+  document.getElementById('modal-prize').textContent=fmtAmt(1000000);
+
+  // Show remaining pack time in modal if pack is active
+  var packRow=document.getElementById('modal-timer-row');
+  if(gs.totalChances>1&&_packMsLeft>0){
+    packRow.style.display='block';
+    document.getElementById('modal-pack-time').textContent=formatMs(_packMsLeft);
+  } else {
+    packRow.style.display='none';
+  }
+
+  document.getElementById('chances-modal').classList.add('open');
+}
+
+function closeChancesModal(){
+  document.getElementById('chances-modal').classList.remove('open');
+}
+
+// User goes for the K1,000,000 Megga win
+function goForMegga(){
+  closeChancesModal();
+  // Outcome: Week 3 always wins; otherwise 20% chance of jackpot
+  var week=getWeek();
+  var jackpotWin=(week>=3)||Math.random()<0.2;
+
+  if(jackpotWin){
+    var winAmt=1000000;
+    setStatus('win','🎉 '+fmtAmt(winAmt)+' MEGGA JACKPOT!');
+    showResultCard(true,winAmt,gs.teaserVal,'MEGGA JACKPOT! 🏆','You went for it and WON the grand prize! '+fmtAmt(winAmt)+' tokens added!');
+    launchConfetti();
+    var newTok=(userProfile.tokens||0)+winAmt;
+    db.collection('users').doc(currentUser.uid).update({tokens:newTok}).then(function(){userProfile.tokens=newTok;updateNavTokens(newTok);return saveMeggaPlay(winAmt,true,gs.teaserVal,'megga');}).catch(function(e){console.error('[WinZed] Token update denied:',e);saveMeggaPlay(winAmt,true,gs.teaserVal,'megga');});
+  } else {
+    // Lose everything — 0 tokens
+    setStatus('lose','😔 No luck this time. Nothing won.');
+    showResultCard(false,0,gs.teaserVal,'No Megga Match','You went for it but luck wasn\'t on your side. 0 tokens this round. Come back tomorrow!');
+    saveMeggaPlay(0,false,gs.teaserVal,'megga_fail');
+  }
+
+  gs.chancesLeft--;
+  updateChanceDots();
+  handleAfterRound();
+}
+
+// User gives up — they get NOTHING (lose = nothing)
+function giveUpAndLose(){
+  closeChancesModal();
+  setStatus('lose','😔 Walked away empty-handed.');
+  showResultCard(false,0,gs.teaserVal,'Walked Away','You gave up. 0 tokens this round. Better luck next time!');
+  saveMeggaPlay(0,false,gs.teaserVal,'gave_up');
+  gs.chancesLeft--;
+  updateChanceDots();
+  handleAfterRound();
+}
+
+function handleAfterRound(){
+  if(gs.chancesLeft>0&&gs.totalChances>1){
+    var nb=document.getElementById('btn-next');
+    nb.textContent='Play Next Chance ('+gs.chancesLeft+' left) →';
+    nb.classList.add('show');
+  } else if(gs.totalChances>1&&gs.chancesLeft<=0){
+    finishPack();
+  }
+}
+
+/* WIN */
+function resolveWin(){
+  var matchVal=gs.teaserVal;
+var realWins = [0.50, 0.80, 1, 2];
+var winAmt = realWins[Math.floor(Math.random()*realWins.length)];
+  showResultCard(true,winAmt,matchVal,'MEGGA MATCH! 🔥 You won!','You matched '+fmtAmt(matchVal)+' × 2 = '+fmtAmt(winAmt)+' tokens added to your balance!');
+  setStatus('win','🎉 '+fmtAmt(winAmt)+' tokens won!');
+  launchConfetti();
+  var newTok=(userProfile.tokens||0)+winAmt;
+  db.collection('users').doc(currentUser.uid).update({tokens:newTok}).then(function(){userProfile.tokens=newTok;updateNavTokens(newTok);return saveMeggaPlay(winAmt,true,matchVal,'win');}).catch(function(e){console.error('[WinZed] Token update denied - remove tokens from notChanging in Firestore rules:',e);saveMeggaPlay(winAmt,true,matchVal,'win');});
+  gs.chancesLeft--;
+  updateChanceDots();
+  handleAfterRound();
+}
+
+/* SHOW RESULT CARD */
+function showResultCard(isWin,amt,matchVal,title,msg){
+  var rc=document.getElementById('result-card');
+  rc.className='result-card show '+(isWin?'win-card':'lose-card');
+  document.getElementById('rc-ico').textContent=isWin?'🎉':'😅';
+  document.getElementById('rc-amt').className='rc-amt'+(isWin?'':' lose');
+  document.getElementById('rc-amt').textContent=isWin?('+'+fmtAmt(amt)+' tokens'):'0 tokens';
+  document.getElementById('rc-title').textContent=title;
+  document.getElementById('rc-msg').textContent=msg;
+}
+
+/* NEXT CHANCE */
+function nextChance(){
+  if(gs.chancesLeft<=0) return;
+  document.getElementById('result-card').classList.remove('show');
+  document.getElementById('btn-next').classList.remove('show');
+  resetGrid();
+  resetPickDots();
+  generateRound();
+  gs.active=true;
+  setStatus('playing','Pick 3 boxes — tap to reveal!');
+  updateChanceDots();
+  // Persist remaining chances
+  db.collection('megga-players').doc(currentUser.uid).update({packChancesLeft:gs.chancesLeft});
+  meggaData.packChancesLeft=gs.chancesLeft;
+}
+
+/* SAVE PLAY */
+function saveMeggaPlay(wonAmt,isWin,matchVal,type){
+  var item={wonAmt:wonAmt,isWin:isWin,matchVal:matchVal,type:type||'',week:getWeek(),playedAt:new Date().toISOString()};
+  var hist=(meggaData.history||[]);
+  hist.unshift(item);if(hist.length>30)hist=hist.slice(0,30);
+  meggaData.history=hist;
+  meggaData.totalPlays=(meggaData.totalPlays||0)+1;
+  meggaData.totalWon=(meggaData.totalWon||0)+wonAmt;
+  renderHistory();
+  return db.collection('megga-players').doc(currentUser.uid).set({
+    totalPlays:meggaData.totalPlays,
+    totalWon:meggaData.totalWon,
+    history:hist
+  },{merge:true});
+}
+
+/* AUTO-START DAILY */
+function autoStartDaily(){
+  var updates={dailyLastUsed:new Date().toISOString(),totalPlays:firebase.firestore.FieldValue.increment(1)};
+  if(!meggaData.firstPlayedAt)updates.firstPlayedAt=new Date().toISOString();
+  db.collection('megga-players').doc(currentUser.uid).set(updates,{merge:true})
+    .then(function(){
+      meggaData.dailyLastUsed=updates.dailyLastUsed;
+      if(!meggaData.firstPlayedAt)meggaData.firstPlayedAt=updates.firstPlayedAt;
+      renderWeekChip();
+      gs.totalChances=1;gs.chancesLeft=1;gs.active=true;gs.roundDone=false;
+      generateRound();resetPickDots();
+      for(var i=0;i<9;i++){var b=document.getElementById('box-'+i);if(b)b.classList.remove('locked');}
+      document.getElementById('result-card').classList.remove('show');
+      document.getElementById('btn-next').classList.remove('show');
+      document.getElementById('chances-strip').classList.remove('show');
+      setStatus('playing','Pick any 3 boxes — tap to reveal!');
+      renderDailyBtn();
+      startDailyCooldown(864e5);
+    })
+    .catch(function(){setStatus('idle','Tap Daily Play to start');});
+}
+
+/* DAILY */
+function startDaily(){
+  if(!isDailyAvailable()){showToast('Daily play already used!','fail');return;}
+  var updates={dailyLastUsed:new Date().toISOString(),totalPlays:firebase.firestore.FieldValue.increment(1)};
+  if(!meggaData.firstPlayedAt)updates.firstPlayedAt=new Date().toISOString();
+  db.collection('megga-players').doc(currentUser.uid).set(updates,{merge:true})
+    .then(function(){
+      meggaData.dailyLastUsed=updates.dailyLastUsed;
+      if(!meggaData.firstPlayedAt)meggaData.firstPlayedAt=updates.firstPlayedAt;
+      renderWeekChip();
+      gs.totalChances=1;gs.chancesLeft=1;gs.active=true;gs.roundDone=false;
+      resetGrid();generateRound();resetPickDots();
+      document.getElementById('result-card').classList.remove('show');
+      document.getElementById('btn-next').classList.remove('show');
+      document.getElementById('chances-strip').classList.remove('show');
+      setStatus('playing','Pick any 3 boxes — tap to reveal!');
+      renderDailyBtn();
+      startDailyCooldown(864e5);
+    })
+    .catch(function(e){showToast('Error: '+e.message,'fail');});
+}
+
+function renderDailyBtn(){
+  var used=!isDailyAvailable();
+  var btn=document.getElementById('btn-daily');
+  btn.disabled=used;
+  document.getElementById('daily-sub').textContent=used?'Used — come back tomorrow':'Free · Once every 24h';
+  if(used&&meggaData.dailyLastUsed){
+    startDailyCooldown(864e5-(Date.now()-new Date(meggaData.dailyLastUsed)));
+  }
+}
+
+function startDailyCooldown(msLeft){
+  if(dailyTimerInt)clearInterval(dailyTimerInt);
+  if(msLeft<=0)return;
+  var strip=document.getElementById('cooldown-strip');
+  var el=document.getElementById('daily-timer');
+  strip.classList.add('show');
+  function tick(){
+    if(msLeft<=0){clearInterval(dailyTimerInt);strip.classList.remove('show');renderDailyBtn();return;}
+    el.textContent=formatMs(msLeft);
+    msLeft-=1000;
+  }
+  tick();dailyTimerInt=setInterval(tick,1000);
+}
+
+/* ═══════════════════════════════════════════
+   PACK — FIX: can buy anytime under 5/day limit
+   Each purchase ADDS 3 to the current pool
+═══════════════════════════════════════════ */
+function buyPack(){
+  var tokens=userProfile.tokens||0;
+  if(tokens<10){showToast('Not enough tokens. Need K10.','fail');return;}
+  var today=new Date().toDateString();
+  var packUsed=(meggaData.packLastDay===today)?(meggaData.packUsedToday||0):0;
+  if(packUsed>=5){showToast('Pack limit reached for today (5/5).','fail');return;}
+
+  if(!confirm('⚠️ Buy 3-Chance Pack for K10 tokens?\n\nAdds 3 more plays to your current pool.\nYou have 3 hours from first pack purchase to use all plays.\nUnused plays are forfeited. No refunds.'))return;
+
+  var newTok=tokens-10;
+  // FIX: If a pack is already active, extend chances. Otherwise fresh expiry.
+  var currentLeft=hasActivePack()?(meggaData.packChancesLeft||0):0;
+  var newChancesLeft=currentLeft+3;
+  // Expiry: if already have active expiry, keep it. Otherwise set fresh 3h.
+  var expiry=hasActivePack()?meggaData.packExpiry:new Date(Date.now()+3*60*60*1000).toISOString();
+
+  var updates={
+    packExpiry:expiry,
+    packChancesLeft:newChancesLeft,
+    packUsedToday:firebase.firestore.FieldValue.increment(1),
+    packLastDay:today,
+    totalPlays:firebase.firestore.FieldValue.increment(1)
+  };
+  if(!meggaData.firstPlayedAt)updates.firstPlayedAt=new Date().toISOString();
+
+  db.collection('users').doc(currentUser.uid).update({tokens:newTok})
+    .then(function(){return db.collection('megga-players').doc(currentUser.uid).set(updates,{merge:true});})
+    .then(function(){
+      userProfile.tokens=newTok;
+      meggaData.packExpiry=expiry;
+      meggaData.packChancesLeft=newChancesLeft;
+      meggaData.packUsedToday=(meggaData.packUsedToday||0)+1;
+      meggaData.packLastDay=today;
+      if(!meggaData.firstPlayedAt)meggaData.firstPlayedAt=updates.firstPlayedAt;
+      updateNavTokens(newTok);
+      renderWeekChip();
+
+      // Add to current session chances
+      gs.chancesLeft+=3;
+      gs.totalChances+=3;
+
+      // If not currently active, start a fresh round
+      if(!gs.active||gs.roundDone){
+        gs.active=true;gs.roundDone=false;
+        resetGrid();generateRound();resetPickDots();
+        document.getElementById('result-card').classList.remove('show');
+        document.getElementById('btn-next').classList.remove('show');
+      }
+
+      updateChanceDots();
+      setStatus('playing','Pack active! Pick 3 boxes to start.');
+
+      // FIX: Restore timer from actual expiry, not hardcoded 3h
+      var msLeft=new Date(expiry)-Date.now();
+      startPackTimer(msLeft);
+
+      document.getElementById('warn-strip').classList.remove('show');
+      renderPackBtn();
+      showToast('+3 chances added! 🔥 Total: '+gs.chancesLeft+' left','megga');
+    })
+    .catch(function(e){showToast('Failed: '+e.message,'fail');});
+}
+
+function renderPackBtn(){
+  var today=new Date().toDateString();
+  var packUsed=(meggaData.packLastDay===today)?(meggaData.packUsedToday||0):0;
+  var remaining=5-packUsed;
+  var active=hasActivePack();
+  // FIX: Can always buy if under 5/day, even with active pack
+  document.getElementById('btn-pack').disabled=packUsed>=5;
+  document.getElementById('pack-uses-note').textContent=packUsed>=5
+    ?'Daily pack limit reached (5/5)'
+    :(remaining+' pack'+(remaining===1?'':'s')+' remaining today');
+  document.getElementById('pack-sub').textContent=active
+    ?'Active — '+gs.chancesLeft+' chance'+(gs.chancesLeft===1?'':'s')+' left'
+    :'3 plays · 3 hrs · up to 5×/day';
+  if(!active)document.getElementById('warn-strip').classList.add('show');
+}
+
+function startPackTimer(msLeft){
+  if(packTimerInt)clearInterval(packTimerInt);
+  _packMsLeft=msLeft;
+  var strip=document.getElementById('timer-strip');
+  var el=document.getElementById('pack-timer');
+  if(msLeft<=0){forfeitPack();return;}
+  strip.classList.add('show');
+  function tick(){
+    _packMsLeft=msLeft;
+    if(msLeft<=0){clearInterval(packTimerInt);strip.classList.remove('show');forfeitPack();return;}
+    el.textContent=formatMs(msLeft);
+    el.className='ts-time'+(msLeft<600000?' urgent':'');
+    msLeft-=1000;
+  }
+  tick();packTimerInt=setInterval(tick,1000);
+}
+
+function forfeitPack(){
+  if((meggaData.packChancesLeft||0)<=0)return;
+  db.collection('megga-players').doc(currentUser.uid).update({packChancesLeft:0,packExpiry:null});
+  meggaData.packChancesLeft=0;meggaData.packExpiry=null;
+  gs.active=false;gs.chancesLeft=0;
+  document.getElementById('timer-strip').classList.remove('show');
+  document.getElementById('chances-strip').classList.remove('show');
+  document.getElementById('btn-next').classList.remove('show');
+  closeChancesModal();
+  lockAllBoxes();
+  setStatus('idle','Pack expired — chances forfeited.');
+  renderPackBtn();
+  showToast('⚠️ Pack expired. Chances forfeited.','fail');
+}
+
+function finishPack(){
+  db.collection('megga-players').doc(currentUser.uid).update({packChancesLeft:0,packExpiry:null});
+  meggaData.packChancesLeft=0;meggaData.packExpiry=null;
+  if(packTimerInt)clearInterval(packTimerInt);
+  document.getElementById('timer-strip').classList.remove('show');
+  document.getElementById('chances-strip').classList.remove('show');
+  renderPackBtn();
+}
+
+function updateChanceDots(){
+  var strip=document.getElementById('chances-strip');
+  var dots=document.getElementById('cs-dots');
+  if(gs.totalChances<=1){strip.classList.remove('show');return;}
+  strip.classList.add('show');dots.innerHTML='';
+  for(var i=0;i<gs.totalChances;i++){
+    var d=document.createElement('div');
+    d.className='cs-dot'+(i>=gs.chancesLeft?' used':'');
+    dots.appendChild(d);
+  }
+}
+
+/* FIX: Restore pack state from Firestore — timer resumes from actual remaining time */
+function restorePackState(){
+  var expiry=meggaData.packExpiry?new Date(meggaData.packExpiry):null;
+  var left=meggaData.packChancesLeft||0;
+  if(expiry&&expiry>new Date()&&left>0){
+    // FIX: Use actual remaining ms from Firestore expiry, not hardcoded 3h
+    var msLeft=expiry-Date.now();
+    gs.totalChances=left;gs.chancesLeft=left;gs.active=true;gs.roundDone=false;
+    generateRound();resetPickDots();updateChanceDots();
+    // Unlock grid
+    for(var i=0;i<9;i++){var b=document.getElementById('box-'+i);if(b)b.classList.remove('locked');}
+    setStatus('playing','Pack active! Pick 3 boxes.');
+    startPackTimer(msLeft);
+    document.getElementById('warn-strip').classList.remove('show');
+    renderPackBtn();
+  } else if(expiry&&expiry<=new Date()&&left>0){
+    forfeitPack();
+  } else {
+    renderPackBtn();
+  }
+}
+
+/* STATUS */
+function setStatus(type,msg){
+  var el=document.getElementById('status-strip');
+  var icos={idle:'⏳',playing:'🎰',win:'🎉',lose:'😅'};
+  el.className='status-strip '+type;
+  el.innerHTML='<span>'+icos[type]+'</span><span>'+msg+'</span>';
+}
+
+/* HISTORY */
+function renderHistory(){
+  var list=document.getElementById('hist-list');
+  var hist=meggaData.history||[];
+  if(!hist.length){list.innerHTML='<div style="font-size:.8rem;color:var(--text3);text-align:center;padding:20px 0">No plays yet — start below!</div>';return;}
+  var typeLabel={win:'Megga Win!',megga:'Megga Jackpot! 🏆',megga_fail:'Megga Attempt',gave_up:'Gave Up'};
+  list.innerHTML=hist.slice(0,8).map(function(h){
+    var d=new Date(h.playedAt);
+    var when=d.toLocaleDateString('en-ZM',{day:'2-digit',month:'short'})+' · '+d.toLocaleTimeString('en-ZM',{hour:'2-digit',minute:'2-digit'});
+    var label=typeLabel[h.type]||(h.isWin?'Megga Win!':'Near miss');
+    var ico=h.isWin?'🎉':'😅';
+    return '<div class="hist-item"><div class="hi-l"><div class="hi-ico">'+ico+'</div><div class="hi-info"><strong>'+label+'</strong><span>Wk '+h.week+' · '+when+'</span></div></div><div class="hi-amt '+(h.isWin?'win':'lose')+'">'+(h.wonAmt>0?'+'+fmtAmt(h.wonAmt):'0 tokens')+'</div></div>';
+  }).join('');
+}
+
+/* HELPERS */
+function formatMs(ms){return pad(Math.floor(ms/3600000))+':'+pad(Math.floor((ms%3600000)/60000))+':'+pad(Math.floor((ms%60000)/1000));}
+function pad(n){return String(Math.floor(n)).padStart(2,'0');}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function getDiffVal(exclude){var o=AMOUNTS.filter(function(a){return a!==exclude;});shuffle(o);return o[0];}
+
+function launchConfetti(){
+  var root=document.getElementById('conf-root');
+  root.innerHTML='';root.classList.add('show');
+  var cols=['#7c3aed','#d94e18','#1a6e35','#c9922a','#3b82f6','#ec4899','#fbbf24'];
+  for(var i=0;i<70;i++){
+    var p=document.createElement('div');p.className='cp';
+    p.style.cssText='left:'+Math.random()*100+'%;background:'+cols[Math.floor(Math.random()*cols.length)]+';animation-duration:'+(1.4+Math.random()*2.2)+'s;animation-delay:'+(Math.random()*.9)+'s;width:'+(5+Math.random()*9)+'px;height:'+(5+Math.random()*9)+'px;border-radius:'+(Math.random()>.5?'50%':'2px');
+    root.appendChild(p);
+  }
+  setTimeout(function(){root.classList.remove('show');root.innerHTML='';},4500);
+}
+
+function showToast(msg,type){
+  var t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+(type||'');
+  t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},3200);
+}
+</script>
+</body>
+</html>

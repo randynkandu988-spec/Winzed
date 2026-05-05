@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WinZed — Prize Wheel</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700;800&family=Bebas+Neue&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:#0a0806;--surface:#12100d;--surface2:#1c1914;--surface3:#241f18;
+  --border:#2e2820;--text:#f5eedc;--text2:#8a7d65;--text3:#554d3d;
+  --accent:#e8581a;--green:#1a8040;--gold:#c9922a;--gold2:#f0c040;--gold3:#fde68a;
+  --gold-glow:rgba(201,146,42,.35);--nav-bg:#0d0b09;--ruby:#c0392b;
+  --purple:#7c3aed;--menu-bg:#0d0b09;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.5}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(201,146,42,.07) 0%,transparent 70%);pointer-events:none;z-index:0}
+
+/* ── NAV ── */
+nav{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 6px;background:var(--nav-bg);border-bottom:1px solid rgba(201,146,42,.12);position:sticky;top:0;z-index:100}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;letter-spacing:-.5px;display:flex;align-items:center;gap:5px;color:var(--text);white-space:nowrap}
+.logo span{color:var(--gold2)}
+.hamburger{background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.hbar{width:13px;height:1.5px;background:var(--text);border-radius:2px}
+.token-pill{display:flex;align-items:center;gap:5px;background:linear-gradient(135deg,#1c1610,#241d12);border:1.5px solid rgba(201,146,42,.35);border-radius:100px;padding:4px 4px 4px 10px;box-shadow:0 0 12px rgba(201,146,42,.1)}
+.tp-amt{font-family:'Syne',sans-serif;font-size:.78rem;font-weight:800;color:var(--gold2)}
+.tp-add{background:linear-gradient(135deg,var(--green),#0f5a2c);color:#fff;border:none;border-radius:100px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;cursor:pointer;flex-shrink:0;line-height:1}
+
+/* ── TAB BAR ── */
+.tab-bar{display:flex;align-items:center;justify-content:space-around;background:var(--nav-bg);border-bottom:1px solid rgba(201,146,42,.1);position:sticky;top:48px;z-index:99}
+.tab-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 8px;font-size:.68rem;font-weight:600;color:var(--text2);cursor:pointer;border:none;background:transparent;font-family:'DM Sans',sans-serif;position:relative;transition:color .2s;flex:1;white-space:nowrap;text-decoration:none}
+.tab-item .tab-ico{font-size:1.05rem}
+.tab-item.active{color:var(--gold2)}
+.tab-item.active::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:28px;height:2px;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:2px 2px 0 0;box-shadow:0 0 8px var(--gold-glow)}
+
+.page-wrap{max-width:480px;margin:0 auto;padding:10px 18px 100px;position:relative;z-index:1}
+
+/* ── JACKPOT TICKER — compact ── */
+.jackpot-ticker{background:linear-gradient(135deg,#0a0612,#130a20,#0a0612);border:1.5px solid rgba(167,139,250,.2);border-radius:14px;padding:8px 12px;margin-bottom:12px;overflow:hidden;position:relative}
+.jackpot-ticker::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(124,58,237,.12),transparent 60%);pointer-events:none}
+
+/* Top row: labels */
+.jt-label-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px}
+.jt-lbl{font-family:'Bebas Neue',cursive;font-size:.75rem;letter-spacing:.15em;text-align:center}
+.jt-lbl.big{color:#e8581a}
+.jt-lbl.grand{color:var(--gold2)}
+.jt-lbl.megga{color:#c084fc}
+
+/* Prize boxes sitting on the row */
+.jt-prize-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px}
+.jt-box{background:rgba(0,0,0,.4);border-radius:8px;padding:5px 4px;text-align:center;border:1px solid rgba(255,255,255,.06)}
+.jt-box.big{border-color:rgba(232,88,26,.25)}
+.jt-box.grand{border-color:rgba(201,146,42,.3)}
+.jt-box.megga{border-color:rgba(124,58,237,.4);background:rgba(124,58,237,.07)}
+.jt-box-amt{font-family:'Bebas Neue',cursive;font-size:1.2rem;line-height:1;letter-spacing:.04em}
+.jt-box.big   .jt-box-amt{color:#ff8c5a}
+.jt-box.grand .jt-box-amt{color:var(--gold3)}
+.jt-box.megga .jt-box-amt{background:linear-gradient(135deg,#a78bfa,#e9d5ff,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* winner ticker scroll */
+.jt-live-row{display:flex;align-items:center;gap:6px}
+.jt-live-dot{width:5px;height:5px;border-radius:50%;background:#4ade80;animation:livePulse 1.2s ease-in-out infinite;flex-shrink:0}
+@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.jt-winner-track{flex:1;height:18px;overflow:hidden;position:relative}
+.jt-winner-list{display:flex;flex-direction:column;transition:transform .5s cubic-bezier(.4,0,.2,1)}
+.jt-winner-item{height:18px;display:flex;align-items:center;gap:5px;font-size:.65rem;color:var(--text2);flex-shrink:0;white-space:nowrap}
+.jw-badge{font-family:'Bebas Neue',cursive;font-size:.65rem;letter-spacing:.08em;padding:1px 5px;border-radius:3px}
+.jw-badge.big{background:rgba(232,88,26,.2);color:#e8581a}
+.jw-badge.grand{background:rgba(201,146,42,.2);color:var(--gold2)}
+.jw-badge.megga{background:rgba(124,58,237,.25);color:#c084fc}
+.jw-phone{color:var(--text);font-weight:600}
+.jw-amount{color:var(--gold3);font-weight:700}
+.jw-time{color:var(--text3);font-size:.6rem}
+
+/* ── WHEEL HEADER ── */
+.wheel-header{text-align:center;margin-bottom:10px}
+.wheel-header h1{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:800;letter-spacing:-.3px;margin-bottom:2px;background:linear-gradient(135deg,#c9922a 0%,#f0c040 40%,#fde68a 60%,#c9922a 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.wheel-header p{font-size:.75rem;color:var(--text2)}
+
+/* ── WHEEL STAGE ── */
+.wheel-stage{display:flex;flex-direction:column;align-items:center;margin-bottom:14px;position:relative}
+.wheel-glow-ring{position:absolute;top:50%;left:50%;width:340px;height:340px;border-radius:50%;transform:translate(-50%,-50%);background:conic-gradient(from 0deg,rgba(201,146,42,.2),rgba(240,192,64,.4),rgba(253,230,138,.2),rgba(201,146,42,.2),rgba(240,192,64,.4),rgba(201,146,42,.1),rgba(240,192,64,.4),rgba(201,146,42,.2));animation:spinGlow 8s linear infinite;pointer-events:none;filter:blur(8px)}
+@keyframes spinGlow{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.wheel-pointer-wrap{position:relative;z-index:20;margin-bottom:-6px;filter:drop-shadow(0 4px 12px rgba(201,146,42,.6))}
+.wheel-pointer-svg{display:block;margin:0 auto}
+.wheel-canvas-wrap{position:relative;z-index:10}
+.wheel-canvas-wrap canvas{display:block;border-radius:50%}
+.wheel-ring-overlay{position:absolute;inset:-8px;border-radius:50%;background:transparent;border:3px solid rgba(201,146,42,.25);pointer-events:none;z-index:15}
+.wheel-ring-overlay2{position:absolute;inset:-16px;border-radius:50%;background:transparent;border:1.5px solid rgba(201,146,42,.1);pointer-events:none;z-index:15}
+.wheel-hub{position:absolute;top:50%;left:50%;width:48px;height:48px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 40% 35%,#f0c040,#9a6a10);border:3px solid rgba(253,230,138,.5);box-shadow:0 0 20px rgba(201,146,42,.8),inset 0 2px 4px rgba(255,255,255,.3);z-index:30;display:flex;align-items:center;justify-content:center;font-size:1.2rem;cursor:default}
+
+/* ── SPIN SECTION ── */
+.bet-section{background:linear-gradient(135deg,#1a150d,#241d12);border:1.5px solid rgba(201,146,42,.2);border-radius:16px;padding:14px 16px;margin-bottom:10px;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+.btn-spin-main{width:100%;padding:15px;background:linear-gradient(135deg,#e8581a,#c73d0a,#e8581a);background-size:200% 100%;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:#fff;cursor:pointer;letter-spacing:-.2px;transition:all .2s;box-shadow:0 6px 28px rgba(232,88,26,.4),inset 0 1px 0 rgba(255,255,255,.2);position:relative;overflow:hidden;margin-bottom:12px}
+.btn-spin-main::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 0%,rgba(255,255,255,.08) 50%,transparent 100%);pointer-events:none}
+.btn-spin-main:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 36px rgba(232,88,26,.5)}
+.btn-spin-main:active:not(:disabled){transform:translateY(0)}
+.btn-spin-main:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-spin-main .spin-txt{display:flex;align-items:center;justify-content:center;gap:8px}
+.spin-icon{font-size:1.2rem;display:inline-block}
+
+/* ── BET ROW ── */
+.bet-row{display:flex;align-items:center;justify-content:center;gap:0}
+.bet-btn{width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(201,146,42,.3);background:linear-gradient(135deg,#1a150d,#241d12);color:var(--gold2);font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;flex-shrink:0}
+.bet-btn:hover{background:rgba(201,146,42,.15);border-color:var(--gold);box-shadow:0 0 12px rgba(201,146,42,.2)}
+.bet-btn:active{transform:scale(.92)}
+.bet-display{flex:1;text-align:center;padding:0 14px}
+.bet-label{font-size:.62rem;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px}
+.bet-amount{font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:800;background:linear-gradient(135deg,#c9922a,#f0c040,#fde68a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.bet-unit{font-size:.6rem;color:var(--text3);margin-top:2px;letter-spacing:.05em}
+.spin-meta{display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid rgba(201,146,42,.1)}
+.sm-item{text-align:center}
+.sm-label{font-size:.6rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px}
+.sm-val{font-family:'Syne',sans-serif;font-size:.82rem;font-weight:800;color:var(--gold2)}
+.sm-val.green{color:#4ade80}
+
+/* ── MEGGA WHEEL MODAL ── */
+.megga-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:500;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(8px)}
+.megga-overlay.show{display:flex}
+.megga-card{background:linear-gradient(160deg,#0a0020,#1a0050,#0a0020);border:2px solid rgba(167,139,250,.35);border-radius:28px;padding:24px 20px 28px;max-width:380px;width:100%;position:relative;overflow:hidden}
+.megga-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(124,58,237,.25),transparent 60%);pointer-events:none}
+.megga-card-header{text-align:center;margin-bottom:16px}
+.megga-card-title{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,#a78bfa,#e9d5ff,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px}
+.megga-card-sub{font-size:.75rem;color:rgba(196,181,253,.6)}
+.megga-wheel-stage{display:flex;flex-direction:column;align-items:center;margin-bottom:16px;position:relative}
+.megga-glow{position:absolute;top:50%;left:50%;width:300px;height:300px;border-radius:50%;transform:translate(-50%,-50%);background:conic-gradient(from 0deg,rgba(124,58,237,.3),rgba(167,139,250,.6),rgba(196,181,253,.3),rgba(124,58,237,.2),rgba(167,139,250,.5),rgba(124,58,237,.1),rgba(167,139,250,.5),rgba(124,58,237,.3));animation:spinGlow 6s linear infinite;pointer-events:none;filter:blur(10px)}
+.megga-spin-info{background:rgba(124,58,237,.1);border:1px solid rgba(167,139,250,.2);border-radius:10px;padding:8px 12px;margin-bottom:12px;text-align:center}
+.megga-spin-info p{font-size:.75rem;color:rgba(196,181,253,.8);line-height:1.6}
+.megga-spin-info strong{color:#e9d5ff}
+.btn-megga-spin{width:100%;padding:13px;background:linear-gradient(135deg,#4c1d95,#7c3aed,#4c1d95);border:1.5px solid rgba(167,139,250,.4);border-radius:12px;font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:#e9d5ff;cursor:pointer;margin-bottom:8px;box-shadow:0 4px 24px rgba(124,58,237,.4);transition:all .2s}
+.btn-megga-spin:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 32px rgba(124,58,237,.6)}
+.btn-megga-spin:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-megga-pay{width:100%;padding:11px;background:linear-gradient(135deg,#1a150d,#241d12);border:1.5px solid rgba(201,146,42,.3);border-radius:12px;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:800;color:var(--gold2);cursor:pointer;margin-bottom:8px;transition:all .2s}
+.btn-megga-pay:hover{border-color:var(--gold);box-shadow:0 0 16px rgba(201,146,42,.2)}
+.btn-megga-close{width:100%;padding:10px;background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.82rem;color:rgba(255,255,255,.35);cursor:pointer;transition:all .2s}
+.btn-megga-close:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.6)}
+
+/* ── HISTORY ── */
+.hist-title{font-size:.6rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.hist-title::before,.hist-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(201,146,42,.2),transparent)}
+.hist-list{display:flex;flex-direction:column;gap:5px}
+.hist-item{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 13px;transition:border-color .2s}
+.hist-item:hover{border-color:rgba(201,146,42,.2)}
+.hist-item.win{border-color:rgba(201,146,42,.15)}
+.hist-item.big-win{border-color:rgba(124,58,237,.25);background:linear-gradient(135deg,#0d0a1a,#12100d)}
+.hi-prize{font-size:.82rem;font-weight:600;color:var(--text)}
+.hi-date{font-size:.65rem;color:var(--text3);margin-top:2px}
+.hi-tokens{font-family:'Syne',sans-serif;font-size:.88rem;font-weight:800;color:var(--gold2)}
+.hi-tokens.none{color:var(--text3)}
+.hi-tokens.big{color:#c084fc}
+
+/* ── WIN OVERLAY ── */
+.win-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:9999;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(6px)}
+.win-overlay.show{display:flex}
+.win-card{background:linear-gradient(160deg,#1a150d,#241d12,#1a150d);border:1.5px solid rgba(201,146,42,.4);border-radius:28px;padding:32px 24px;max-width:280px;width:100%;text-align:center;position:relative;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.85),0 0 60px rgba(201,146,42,.15);animation:winPop .5s cubic-bezier(.34,1.56,.64,1) both}
+.win-card.lose-card{border-color:rgba(255,255,255,.1)}
+.win-card.megga-win-card{border-color:rgba(167,139,250,.5);background:linear-gradient(160deg,#0a0020,#1a0050,#0a0020);box-shadow:0 24px 80px rgba(0,0,0,.9),0 0 80px rgba(124,58,237,.3)}
+@keyframes winPop{0%{opacity:0;transform:scale(.75) translateY(24px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+.win-card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(201,146,42,.13),transparent 55%);pointer-events:none}
+.win-card.megga-win-card::before{background:radial-gradient(circle at 50% 0%,rgba(124,58,237,.25),transparent 55%)}
+.confetti-wrap{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.win-ico{font-size:3.2rem;display:block;margin-bottom:6px;animation:bounceIco .6s cubic-bezier(.34,1.56,.64,1) .15s both}
+@keyframes bounceIco{0%{transform:scale(0) rotate(-20deg)}100%{transform:scale(1) rotate(0)}}
+.win-label{font-size:.65rem;letter-spacing:.18em;text-transform:uppercase;color:var(--text3);margin-bottom:5px}
+.win-amount{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:800;line-height:1;margin-bottom:8px;background:linear-gradient(135deg,#c9922a,#f0c040,#fde68a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.win-amount.megga-amt{background:linear-gradient(135deg,#a78bfa,#e9d5ff,#c084fc);-webkit-background-clip:text;background-clip:text}
+.win-amount.lose{font-family:'Syne',sans-serif;font-size:1.2rem;background:none;-webkit-text-fill-color:var(--text2);color:var(--text2)}
+.win-sub{font-size:.78rem;color:var(--text2);line-height:1.6;margin-bottom:0}
+
+/* ── MODALS ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px)}
+.modal-overlay.show{display:flex}
+.modal-sheet{background:linear-gradient(160deg,#1a150d,#12100d);border:1px solid rgba(201,146,42,.2);border-radius:22px 22px 0 0;padding:24px 20px 40px;width:100%;max-width:480px}
+.modal-sheet h3{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;margin-bottom:4px;color:var(--text)}
+.modal-sheet p{font-size:.76rem;color:var(--text2);margin-bottom:16px;line-height:1.6}
+.dep-input-wrap{display:flex;align-items:center;border:1.5px solid rgba(201,146,42,.25);border-radius:10px;overflow:hidden;margin-bottom:12px;background:var(--surface2)}
+.dep-pfx{padding:12px 14px;font-weight:700;font-size:.9rem;color:var(--gold);border-right:1.5px solid rgba(201,146,42,.2);white-space:nowrap}
+.dep-input-wrap input{border:none;background:transparent;padding:12px 14px;font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--text);outline:none;flex:1}
+.btn-confirm{border:none;border-radius:10px;padding:13px;font-family:'Syne',sans-serif;font-size:.9rem;font-weight:800;cursor:pointer;width:100%}
+.btn-confirm.deposit{background:linear-gradient(135deg,var(--green),#0f5a2c);color:#fff}
+.btn-confirm.withdraw{background:linear-gradient(135deg,#1a8040,#0f5a2c);color:#fff}
+.btn-cancel{background:var(--surface2);color:var(--text2);border:none;border-radius:10px;padding:11px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;width:100%;margin-top:8px}
+.err-msg{background:rgba(192,57,43,.12);border:1px solid rgba(192,57,43,.3);color:#f87171;border-radius:8px;padding:8px 12px;font-size:.75rem;margin-bottom:9px;display:none}
+
+/* ── WD SUCCESS ── */
+.wd-success{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)}
+.wd-success.show{display:flex}
+.wd-card{background:linear-gradient(160deg,#0d1a0f,#12100d);border:1.5px solid rgba(26,128,64,.4);border-radius:24px;padding:28px 20px;max-width:280px;width:100%;text-align:center;position:relative;overflow:hidden}
+.wd-ico{font-size:2.8rem;margin-bottom:10px;display:block}
+.wd-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:#4ade80;margin-bottom:6px}
+.wd-amount{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:800;color:var(--text);margin-bottom:4px}
+.wd-msg{font-size:.76rem;color:var(--text2);line-height:1.65;margin-bottom:18px}
+.btn-wd-close{background:linear-gradient(135deg,#1a8040,#0f5a2c);color:#fff;border:none;border-radius:12px;padding:12px;font-family:'Syne',sans-serif;font-size:.9rem;font-weight:800;cursor:pointer;width:100%}
+
+/* ── SIDE MENU ── */
+.menu-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200}
+.menu-overlay.open{display:block}
+.side-menu{position:fixed;right:0;top:0;bottom:0;width:255px;background:var(--menu-bg);border-left:1px solid rgba(201,146,42,.1);z-index:201;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+.side-menu.open{transform:translateX(0)}
+.menu-top{padding:20px 16px 16px;border-bottom:1px solid rgba(201,146,42,.1);display:flex;align-items:center;justify-content:space-between}
+.menu-av{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),#b83d10);border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;flex-shrink:0}
+.menu-name{font-family:'Syne',sans-serif;font-weight:700;font-size:.86rem;color:var(--text)}
+.menu-phone{font-size:.66rem;color:rgba(255,255,255,.3);margin-top:1px}
+.menu-close{background:rgba(255,255,255,.07);border:none;border-radius:8px;width:28px;height:28px;cursor:pointer;color:rgba(255,255,255,.4);font-size:.82rem;display:flex;align-items:center;justify-content:center}
+.menu-items{padding:10px 10px;display:flex;flex-direction:column;gap:2px;flex:1}
+.menu-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;color:rgba(255,255,255,.45);font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;transition:all .18s}
+.menu-item:hover{background:rgba(255,255,255,.07);color:var(--text)}
+.menu-item .mi{font-size:.86rem;width:18px;text-align:center;flex-shrink:0}
+.menu-item.danger{color:#f87171}
+.menu-item.danger:hover{background:rgba(220,38,38,.14)}
+.menu-divider{height:1px;background:rgba(255,255,255,.06);margin:5px 10px}
+.menu-bottom{padding:10px 16px;border-top:1px solid rgba(255,255,255,.06)}
+.menu-ver{font-size:.6rem;color:rgba(255,255,255,.15);text-align:center}
+
+/* ── CONFETTI ── */
+.confetti-piece{position:absolute;border-radius:2px;animation:confettiFall linear forwards}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(380px) rotate(720deg);opacity:0}}
+
+/* ── TOAST ── */
+.milestone-toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(80px);background:linear-gradient(135deg,#1a0050,#4c1d95);border:1px solid rgba(167,139,250,.4);border-radius:12px;padding:10px 20px;font-family:'Syne',sans-serif;font-size:.78rem;font-weight:700;color:#e9d5ff;z-index:9998;transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .4s;opacity:0;white-space:nowrap;box-shadow:0 8px 32px rgba(124,58,237,.4);pointer-events:none}
+.milestone-toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+footer{border-top:1px solid rgba(201,146,42,.1);padding:14px 16px;font-size:.67rem;color:var(--text3);text-align:center;position:relative;z-index:1}
+</style>
+</head>
+<body>
+
+<div class="milestone-toast" id="milestone-toast">🔥 Spin milestone reached!</div>
+
+<!-- SIDE MENU -->
+<div class="menu-overlay" id="menu-overlay" onclick="closeMenu()"></div>
+<div class="side-menu" id="side-menu">
+  <div class="menu-top">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="menu-av" id="menu-av">?</div>
+      <div><div class="menu-name" id="menu-name">...</div><div class="menu-phone" id="menu-phone">...</div></div>
+    </div>
+    <button class="menu-close" onclick="closeMenu()">✕</button>
+  </div>
+  <div class="menu-items">
+    <button class="menu-item" onclick="window.location.href='main.html'"><span class="mi">🏠</span>Back to Home</button>
+    <button class="menu-item" onclick="openWithdraw();closeMenu()"><span class="mi">💸</span>Withdraw</button>
+    <div class="menu-divider"></div>
+    <button class="menu-item danger" onclick="doLogout()"><span class="mi">🚪</span>Log Out</button>
+  </div>
+  <div class="menu-bottom"><div class="menu-ver">WinZed · Kabwe, Zambia 🇿🇲 · 2026</div></div>
+</div>
+
+<!-- DEPOSIT MODAL -->
+<div class="modal-overlay" id="deposit-modal">
+  <div class="modal-sheet">
+    <h3>💰 Add Tokens</h3>
+    <p>Enter the amount you want to deposit. You'll be taken to dial <strong>*115#</strong> to complete payment.</p>
+    <div class="dep-input-wrap"><div class="dep-pfx">K</div><input type="number" id="dep-amount" placeholder="e.g. 50" min="1"/></div>
+    <div id="dep-err" class="err-msg"></div>
+    <button class="btn-confirm deposit" onclick="handleDeposit()">Confirm & Dial *115# →</button>
+    <button class="btn-cancel" onclick="closeDeposit()">Cancel</button>
+  </div>
+</div>
+
+<!-- WITHDRAW MODAL -->
+<div class="modal-overlay" id="withdraw-modal">
+  <div class="modal-sheet">
+    <h3>💸 Withdraw</h3>
+    <p>Enter withdrawal amount. Takes 1–2 minutes to arrive in your Airtel Money.</p>
+    <div class="dep-input-wrap"><div class="dep-pfx">K</div><input type="number" id="wd-amount" placeholder="e.g. 20" min="1"/></div>
+    <div id="wd-err" class="err-msg"></div>
+    <button class="btn-confirm withdraw" onclick="handleWithdraw()">Withdraw Now</button>
+    <button class="btn-cancel" onclick="closeWithdraw()">Cancel</button>
+  </div>
+</div>
+
+<!-- WD SUCCESS -->
+<div class="wd-success" id="wd-success">
+  <div class="wd-card">
+    <div class="confetti-wrap" id="wd-confetti"></div>
+    <span class="wd-ico">🎉</span>
+    <div class="wd-amount" id="wd-s-amount">K0.00</div>
+    <div class="wd-title">Withdrawal Submitted!</div>
+    <div class="wd-msg">Wait <strong>1–2 minutes</strong> for the money to reflect in your Airtel Money. It's on its way! 🚀</div>
+    <button class="btn-wd-close" onclick="document.getElementById('wd-success').classList.remove('show')">Got it 👍</button>
+  </div>
+</div>
+
+<!-- WIN OVERLAY -->
+<div class="win-overlay" id="win-overlay">
+  <div class="win-card" id="win-card">
+    <div class="confetti-wrap" id="win-confetti"></div>
+    <span class="win-ico" id="win-ico">🎉</span>
+    <div class="win-label" id="win-label">YOU WON</div>
+    <div class="win-amount" id="win-amount">K10</div>
+    <div class="win-sub" id="win-sub">Added to your balance!</div>
+  </div>
+</div>
+
+<!-- MEGGA WHEEL MODAL -->
+<div class="megga-overlay" id="megga-overlay">
+  <div class="megga-card">
+    <div class="megga-card-header">
+      <div class="megga-card-title">👑 MEGGA WHEEL</div>
+      <div class="megga-card-sub" id="megga-card-sub">Where legends are made</div>
+    </div>
+    <div class="megga-wheel-stage" id="megga-wheel-stage">
+      <div class="megga-glow"></div>
+      <div class="wheel-pointer-wrap" style="margin-bottom:-6px;filter:drop-shadow(0 4px 12px rgba(167,139,250,.8))">
+        <svg width="28" height="32" viewBox="0 0 36 40" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="mpg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e9d5ff"/><stop offset="40%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#4c1d95"/></linearGradient></defs>
+          <polygon points="18,38 2,4 34,4" fill="url(#mpg)"/>
+          <circle cx="18" cy="38" r="4" fill="url(#mpg)"/>
+        </svg>
+      </div>
+      <div style="position:relative">
+        <canvas id="megga-canvas" width="260" height="260" style="border-radius:50%;box-shadow:0 0 0 4px rgba(124,58,237,.3),0 0 0 8px rgba(124,58,237,.08),0 12px 48px rgba(0,0,0,.8)"></canvas>
+        <div style="position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(124,58,237,.3);pointer-events:none;z-index:15"></div>
+        <div style="position:absolute;top:50%;left:50%;width:44px;height:44px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 40% 35%,#a78bfa,#4c1d95);border:2px solid rgba(196,181,253,.5);box-shadow:0 0 16px rgba(124,58,237,.8);z-index:30;display:flex;align-items:center;justify-content:center;font-size:1.2rem" id="megga-hub">👑</div>
+      </div>
+    </div>
+    <div class="megga-spin-info">
+      <p id="megga-spin-desc">You've earned <strong>1 FREE spin</strong> on the Megga Wheel! Prizes from <strong>K6,000 to K1,000,000</strong>.</p>
+    </div>
+    <button class="btn-megga-spin" id="btn-megga-spin" onclick="doMeggaSpin()">👑 SPIN FREE</button>
+    <button class="btn-megga-pay" id="btn-megga-pay" onclick="doMeggaPay()">💰 Buy Extra Spin — K1,000</button>
+    <button class="btn-megga-close" onclick="closeMeggaWheel()">✕ Close</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">🇿🇲 Win<span>Zed</span></div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="token-pill">
+      <span class="tp-amt" id="nav-token-amt">K0.00</span>
+      <button class="tp-add" onclick="openDeposit()">+</button>
+    </div>
+    <button class="hamburger" onclick="openMenu()">
+      <div class="hbar"></div><div class="hbar"></div><div class="hbar"></div>
+    </button>
+  </div>
+</nav>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <a class="tab-item" href="main.html"><span class="tab-ico">🏠</span>Home</a>
+  <a class="tab-item" href="predict.html"><span class="tab-ico">⚽</span>Predict</a>
+  <a class="tab-item active" href="wheel.html"><span class="tab-ico">🎡</span>Wheel</a>
+  <a class="tab-item" href="megga.html"><span class="tab-ico">🎰</span>Megga</a>
+</div>
+
+<div class="page-wrap">
+
+  <!-- JACKPOT TICKER — compact, no reset times -->
+  <div class="jackpot-ticker">
+    <div class="jt-label-row">
+      <div class="jt-lbl big">BIG</div>
+      <div class="jt-lbl grand">GRAND</div>
+      <div class="jt-lbl megga">MEGGA</div>
+    </div>
+    <div class="jt-prize-row">
+      <div class="jt-box big"><div class="jt-box-amt" id="jp-big">K7,500</div></div>
+      <div class="jt-box grand"><div class="jt-box-amt" id="jp-grand">K40,000</div></div>
+      <div class="jt-box megga"><div class="jt-box-amt" id="jp-megga">K300K</div></div>
+    </div>
+    <div class="jt-live-row">
+      <div class="jt-live-dot"></div>
+      <div class="jt-winner-track">
+        <div class="jt-winner-list" id="jt-winner-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHEEL HEADER -->
+  <div class="wheel-header">
+    <h1>Prize Wheel</h1>
+    <p>Bet &amp; spin to win real tokens instantly</p>
+  </div>
+
+  <!-- WHEEL STAGE -->
+  <div class="wheel-stage" id="wheel-stage">
+    <div class="wheel-glow-ring" id="wheel-glow-ring"></div>
+    <div class="wheel-pointer-wrap">
+      <svg class="wheel-pointer-svg" width="32" height="36" viewBox="0 0 36 40" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#fde68a"/>
+            <stop offset="40%" stop-color="#c9922a"/>
+            <stop offset="100%" stop-color="#7a5010"/>
+          </linearGradient>
+          <filter id="pshadow"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#c9922a" flood-opacity=".7"/></filter>
+        </defs>
+        <polygon points="18,38 2,4 34,4" fill="url(#pg)" filter="url(#pshadow)"/>
+        <polygon points="18,34 5,6 31,6" fill="none" stroke="rgba(253,230,138,.4)" stroke-width="1"/>
+        <circle cx="18" cy="38" r="4" fill="url(#pg)"/>
+      </svg>
+    </div>
+    <div class="wheel-canvas-wrap" style="position:relative">
+      <canvas id="wheel-canvas" width="300" height="300" style="border-radius:50%;box-shadow:0 0 0 4px rgba(201,146,42,.25),0 0 0 8px rgba(201,146,42,.08),0 12px 50px rgba(0,0,0,.7)"></canvas>
+      <div class="wheel-ring-overlay"></div>
+      <div class="wheel-ring-overlay2"></div>
+      <div class="wheel-hub" id="wheel-hub">🎡</div>
+    </div>
+  </div>
+
+  <!-- BET + SPIN CONTROLS -->
+  <div class="bet-section">
+    <button class="btn-spin-main" id="spin-btn" onclick="doSpin()">
+      <div class="spin-txt"><span class="spin-icon">🎡</span> SPIN NOW</div>
+    </button>
+    <div class="bet-row">
+      <button class="bet-btn" onclick="changeBet(-5)">−</button>
+      <div class="bet-display">
+        <div class="bet-label">Bet Amount</div>
+        <div class="bet-amount" id="bet-display">K5</div>
+        <div class="bet-unit">tokens per spin · +5 steps · max K100</div>
+      </div>
+      <button class="bet-btn" onclick="changeBet(+5)">+</button>
+    </div>
+    <div class="spin-meta">
+      <div class="sm-item">
+        <div class="sm-label">Balance</div>
+        <div class="sm-val" id="meta-balance">K0</div>
+      </div>
+      <div class="sm-item">
+        <div class="sm-label">Spins Left</div>
+        <div class="sm-val" id="meta-spins">0</div>
+      </div>
+      <div class="sm-item">
+        <div class="sm-label">Max Win</div>
+        <div class="sm-val" id="meta-maxwin">K6,500</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="hist-title">Spin History</div>
+  <div class="hist-list" id="spin-history">
+    <div style="font-size:.8rem;color:var(--text3);text-align:center;padding:22px">No spins yet. Give it a spin!</div>
+  </div>
+
+</div>
+
+<footer>
+  <div style="max-width:480px;margin:0 auto">© 2026 WinZed · Kabwe, Zambia 🇿🇲 · Real prizes · Verified entries only</div>
+</footer>
+
+<script>
+// ─── FIREBASE CONFIG ────────────────────────────────────
+firebase.initializeApp({
+  apiKey:"AIzaSyA-vSOEKp4v6aPud9enjiA-AzuQVl53Wto",
+  authDomain:"winzed-413be.firebaseapp.com",
+  projectId:"winzed-413be",
+  storageBucket:"winzed-413be.firebasestorage.app",
+  messagingSenderId:"1092518915452",
+  appId:"1:1092518915452:web:016a41f0d250afe7d288f9"
+});
+var auth = firebase.auth(), db = firebase.firestore();
+var currentUser = null, userProfile = null;
+var isSpinning = false, currentAngle = 0;
+var isMeggaSpinning = false, meggaAngle = 0;
+var canvas, ctx, meggaCanvas, meggaCtx;
+var totalSpins = 0;
+var meggaFreeUsed = false;
+
+// ─── BET CONFIG ─────────────────────────────────────────
+var BET_MIN = 5, BET_MAX = 100, BET_STEP = 5;
+var betAmount = 5;
+
+// ─── PRIZE SEGMENTS (includes MEGGA WHEEL slot, locked until 75 spins) ──
+// Note: MEGGA WHEEL segment has weight 0 until unlocked, then becomes active
+var BASE_PRIZES = [
+  { base:0,       color:'#1c1812', ico:'😅', label:'Try Again',    weight:28,  isMegga:false },
+  { base:2,       color:'#14401e', ico:'💚', label:null,           weight:22,  isMegga:false },
+  { base:0,       color:'#1c1812', ico:'😅', label:'Try Again',    weight:20,  isMegga:false },
+  { base:5,       color:'#0f3318', ico:'💰', label:null,           weight:13,  isMegga:false },
+  { base:0,       color:'#1c1812', ico:'😅', label:'Try Again',    weight:10,  isMegga:false },
+  { base:10,      color:'#1a3060', ico:'🎯', label:null,           weight:8,   isMegga:false },
+  { base:25,      color:'#7a3010', ico:'🔥', label:null,           weight:4,   isMegga:false },
+  { base:120,     color:'#2c1060', ico:'💜', label:null,           weight:1.5, isMegga:false },
+  { base:500,     color:'#7c3aed', ico:'👑', label:null,           weight:0.5, isMegga:false },
+  { base:1200,    color:'#b8851f', ico:'🏆', label:null,           weight:0.2, isMegga:false },
+  { base:5000,    color:'#6b0f0f', ico:'🌟', label:null,           weight:0.04,isMegga:false },
+  // MEGGA WHEEL slot — special segment, locked until 75 spins
+  { base:0,       color:'#1a0050', ico:'👑', label:'MEGGA WHEEL',  weight:0,   isMegga:true  },
+];
+
+var MEGGA_PRIZES = [
+  { tokens:0,       color:'#12100d', ico:'😅', label:'Try Again',   weight:25 },
+  { tokens:6000,    color:'#0f3318', ico:'💎', label:'K6,000',      weight:20 },
+  { tokens:0,       color:'#12100d', ico:'😅', label:'Try Again',   weight:20 },
+  { tokens:12000,   color:'#1a3060', ico:'💚', label:'K12,000',     weight:14 },
+  { tokens:25000,   color:'#7a3010', ico:'🔥', label:'K25,000',     weight:8  },
+  { tokens:50000,   color:'#2c1060', ico:'👑', label:'K50,000',     weight:4  },
+  { tokens:100000,  color:'#4c1d95', ico:'💜', label:'K100,000',    weight:2  },
+  { tokens:200000,  color:'#7c3aed', ico:'🏆', label:'K200,000',    weight:0.8},
+  { tokens:500000,  color:'#b8851f', ico:'🌟', label:'K500,000',    weight:0.2},
+  { tokens:1000000, color:'#6b0f0f', ico:'🌌', label:'K1,000,000',  weight:0.04},
+];
+
+function scaledTokens(base, bet) {
+  var factor = bet / BET_MIN;
+  if (base === 5000) return Math.round(base * factor * 1.3);
+  if (base === 1200 || base === 500) return Math.round(base * factor * 1.2);
+  if (base === 0) return 0;
+  return Math.round(base * factor);
+}
+
+function buildSegments(bet) {
+  return BASE_PRIZES.map(function(s) {
+    if (s.isMegga) {
+      return {
+        label: 'MEGGA\nWHEEL',
+        tokens: 0,
+        color: '#1a0050',
+        ico: '👑',
+        weight: totalSpins >= 75 ? 1.5 : 0,
+        isMegga: true
+      };
+    }
+    var t = scaledTokens(s.base, bet);
+    return {
+      label: s.label !== null ? s.label : (t > 0 ? ('K' + t) : 'Try Again'),
+      tokens: t,
+      color: s.color,
+      ico: s.ico,
+      weight: s.weight,
+      isMegga: false
+    };
+  });
+}
+
+var segments = buildSegments(BET_MIN);
+
+// ─── JACKPOT TICKER ─────────────────────────────────────
+var jpBig   = 7500;
+var jpGrand = 40000;
+var jpMegga = 300000;
+
+function formatJP(n) {
+  if (n >= 1000000) return 'K' + (n/1000000).toFixed(2) + 'M';
+if (n >= 1000) return 'K' + Math.round(n).toLocaleString();
+  return 'K' + Math.round(n);
+}
+
+function tickJackpots() {
+  jpBig   += 4 + Math.random() * 8;
+  jpGrand += 30 + Math.random() * 60;
+  jpMegga += 100 + Math.random() * 300;
+  // Cap before showing unrealistic numbers
+  if (jpBig   > 15000)  jpBig   = 7500 + Math.random() * 500;
+  if (jpGrand > 80000)  jpGrand = 40000 + Math.random() * 2000;
+  if (jpMegga > 600000) jpMegga = 300000 + Math.random() * 10000;
+  document.getElementById('jp-big').textContent   = formatJP(jpBig);
+  document.getElementById('jp-grand').textContent = formatJP(jpGrand);
+  document.getElementById('jp-megga').textContent = formatJP(jpMegga);
+}
+setInterval(tickJackpots, 1500);
+tickJackpots();
+
+// ─── WINNER SCROLL TICKER ────────────────────────────────
+// Big = up to 24h ago, Grand = up to 1 day ago, Megga = days ago
+var WINNER_DATA = [
+  { type:'big',   phone:'2607756****59', amount:'K8,240',   time:'2 hours ago' },
+  { type:'grand', phone:'2607834****12', amount:'K43,500',  time:'7 hours ago' },
+  { type:'big',   phone:'2609764****88', amount:'K9,100',   time:'18 hours ago' },
+  { type:'megga', phone:'2607765****44', amount:'K320,000', time:'2 days ago' },
+  { type:'big',   phone:'2607821****07', amount:'K7,800',   time:'5 hours ago' },
+  { type:'grand', phone:'2609512****31', amount:'K55,200',  time:'1 day ago' },
+  { type:'big',   phone:'2607654****90', amount:'K12,000',  time:'20 hours ago' },
+  { type:'megga', phone:'2607799****23', amount:'K180,000', time:'4 days ago' },
+  { type:'grand', phone:'2609345****67', amount:'K40,800',  time:'10 hours ago' },
+  { type:'big',   phone:'2607888****11', amount:'K7,500',   time:'1 hour ago' },
+];
+var winnerIdx = 0;
+function buildWinnerList() {
+  var list = document.getElementById('jt-winner-list');
+  list.innerHTML = '';
+  WINNER_DATA.forEach(function(w) {
+    var div = document.createElement('div');
+    div.className = 'jt-winner-item';
+    div.innerHTML = '<span class="jw-badge '+w.type+'">'+w.type.toUpperCase()+'</span>'
+      +'<span class="jw-phone">'+w.phone+'</span>'
+      +' <span class="jw-amount">'+w.amount+'</span>'
+      +' <span class="jw-time">· '+w.time+'</span>';
+    list.appendChild(div);
+  });
+}
+function scrollWinners() {
+  var list = document.getElementById('jt-winner-list');
+  winnerIdx = (winnerIdx + 1) % WINNER_DATA.length;
+  list.style.transform = 'translateY(-' + (winnerIdx * 18) + 'px)';
+}
+buildWinnerList();
+setInterval(scrollWinners, 2400);
+
+// ─── UI HELPERS ─────────────────────────────────────────
+function openMenu()      { document.getElementById('side-menu').classList.add('open'); document.getElementById('menu-overlay').classList.add('open'); }
+function closeMenu()     { document.getElementById('side-menu').classList.remove('open'); document.getElementById('menu-overlay').classList.remove('open'); }
+function openDeposit()   { document.getElementById('deposit-modal').classList.add('show'); }
+function closeDeposit()  { document.getElementById('deposit-modal').classList.remove('show'); }
+function openWithdraw()  { document.getElementById('withdraw-modal').classList.add('show'); }
+function closeWithdraw() { document.getElementById('withdraw-modal').classList.remove('show'); }
+function doLogout()      { auth.signOut().then(function() { window.location.href = 'index.html'; }); }
+
+function updateNavTokens(a) {
+  var v = (parseFloat(a) || 0).toFixed(2);
+  document.getElementById('nav-token-amt').textContent = 'K' + v;
+  document.getElementById('meta-balance').textContent  = 'K' + v;
+}
+function updateSpinsAvail() {
+  var bal = userProfile ? userProfile.tokens || 0 : 0;
+  var s   = Math.floor(bal / betAmount);
+  document.getElementById('meta-spins').textContent = s;
+}
+function updateMaxWin() {
+  document.getElementById('meta-maxwin').textContent = 'K' + scaledTokens(5000, betAmount).toLocaleString();
+}
+
+// ─── BET CHANGE ─────────────────────────────────────────
+function changeBet(delta) {
+  if (isSpinning) return;
+  var nb = betAmount + delta;
+  if (nb < BET_MIN) nb = BET_MIN;
+  if (nb > BET_MAX) nb = BET_MAX;
+  betAmount = nb;
+  document.getElementById('bet-display').textContent = 'K' + betAmount;
+  segments = buildSegments(betAmount);
+  drawWheel(currentAngle);
+  updateSpinsAvail();
+  updateMaxWin();
+}
+
+// ─── AUTH ────────────────────────────────────────────────
+var _ac = false;
+auth.onAuthStateChanged(function(user) {
+  if (!_ac) { _ac = true; if (user) { currentUser = user; loadUser(); } return; }
+  if (!user) { window.location.href = 'index.html'; return; }
+  currentUser = user; loadUser();
+});
+
+function loadUser() {
+  db.collection('users').doc(currentUser.uid).get().then(function(snap) {
+    if (!snap.exists) { window.location.href = 'index.html'; return; }
+    userProfile = snap.data();
+    document.getElementById('menu-av').textContent    = userProfile.name.charAt(0).toUpperCase();
+    document.getElementById('menu-name').textContent  = userProfile.name;
+    document.getElementById('menu-phone').textContent = userProfile.phone;
+    updateNavTokens(userProfile.tokens || 0);
+    meggaFreeUsed = userProfile.meggaFreeUsed === true;
+
+    // Count spins — fall back to stored count if query fails (no composite index)
+    db.collection('spin-history').where('uid','==',currentUser.uid).get()
+      .then(function(s) {
+        totalSpins = s.size;
+        finishInit();
+      }).catch(function() {
+        totalSpins = userProfile.totalSpins || 0;
+        finishInit();
+      });
+  }).catch(function(e) { console.error('loadUser:', e); });
+}
+
+function finishInit() {
+  segments = buildSegments(betAmount);
+  initWheel();
+  initMeggaWheel();
+  loadHistory();
+  updateSpinsAvail();
+  updateMaxWin();
+}
+
+// ─── WHEEL DRAW ──────────────────────────────────────────
+function initWheel() {
+  canvas = document.getElementById('wheel-canvas');
+  ctx    = canvas.getContext('2d');
+  var dpr = window.devicePixelRatio || 1;
+  var size = 300;
+  canvas.width  = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width  = size + 'px';
+  canvas.style.height = size + 'px';
+  ctx.scale(dpr, dpr);
+  drawWheel(0);
+}
+
+function drawWheel(angle) {
+  if (!ctx) return;
+  var size = 300, cx = size/2, cy = size/2, r = size/2 - 2;
+  var n = segments.length, arc = 2*Math.PI/n;
+  ctx.clearRect(0, 0, size, size);
+
+  // Gold rim
+  var rimGrad = ctx.createLinearGradient(0,0,size,size);
+  rimGrad.addColorStop(0,'#fde68a'); rimGrad.addColorStop(.25,'#c9922a');
+  rimGrad.addColorStop(.5,'#f0c040'); rimGrad.addColorStop(.75,'#9a6a10'); rimGrad.addColorStop(1,'#fde68a');
+  ctx.beginPath(); ctx.arc(cx,cy,r+2,0,2*Math.PI); ctx.fillStyle=rimGrad; ctx.fill();
+
+  segments.forEach(function(seg, i) {
+    var start = angle + i*arc - Math.PI/2;
+    var end   = start + arc;
+
+    if (seg.isMegga && totalSpins >= 75) {
+      // Special purple gradient for unlocked MEGGA segment
+      var grad = ctx.createRadialGradient(cx,cy,r*.1,cx,cy,r*.95);
+      grad.addColorStop(0,'#6d28d9');
+      grad.addColorStop(.5,'#4c1d95');
+      grad.addColorStop(1,'#2d0080');
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,end); ctx.closePath();
+      ctx.fillStyle=grad; ctx.fill();
+      // Purple glow border
+      ctx.beginPath(); ctx.moveTo(cx,cy);
+      ctx.lineTo(cx+Math.cos(start)*r, cy+Math.sin(start)*r);
+      ctx.strokeStyle='rgba(167,139,250,.8)'; ctx.lineWidth=2; ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx,cy,r-1,start,end);
+      ctx.strokeStyle='rgba(196,181,253,.3)'; ctx.lineWidth=4; ctx.stroke();
+    } else if (seg.isMegga) {
+      // Locked — dark grey
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,end); ctx.closePath();
+      ctx.fillStyle='#1a1412'; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx,cy);
+      ctx.lineTo(cx+Math.cos(start)*r, cy+Math.sin(start)*r);
+      ctx.strokeStyle='rgba(201,146,42,.3)'; ctx.lineWidth=1.5; ctx.stroke();
+    } else {
+      var grad = ctx.createRadialGradient(cx,cy,r*.1,cx,cy,r*.95);
+      grad.addColorStop(0, lighten(seg.color,.3));
+      grad.addColorStop(.6, seg.color);
+      grad.addColorStop(1, darken(seg.color,.3));
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,end); ctx.closePath();
+      ctx.fillStyle=grad; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx,cy);
+      ctx.lineTo(cx+Math.cos(start)*r, cy+Math.sin(start)*r);
+      ctx.strokeStyle='rgba(201,146,42,.5)'; ctx.lineWidth=1.5; ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx,cy,r-1,start,end);
+      ctx.strokeStyle='rgba(253,230,138,.15)'; ctx.lineWidth=3; ctx.stroke();
+    }
+  });
+
+  // Labels
+  segments.forEach(function(seg, i) {
+    var mid = angle + i*arc - Math.PI/2 + arc/2;
+    var lr  = r * 0.68;
+    var lx  = cx + Math.cos(mid)*lr;
+    var ly  = cy + Math.sin(mid)*lr;
+    ctx.save();
+    ctx.translate(lx, ly);
+    ctx.rotate(mid + Math.PI/2);
+
+    if (seg.isMegga) {
+      if (totalSpins >= 75) {
+        // Unlocked MEGGA label
+        ctx.font = '14px DM Sans'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('👑', 0, -18);
+        ctx.font = 'bold 8px Bebas Neue,sans-serif';
+        ctx.shadowColor='rgba(196,181,253,.9)'; ctx.shadowBlur=8;
+        ctx.fillStyle='#e9d5ff';
+        ctx.fillText('MEGGA', 0, -5);
+        ctx.fillText('WHEEL', 0, 6);
+      } else {
+        // Locked — show lock icon
+        ctx.font = '13px DM Sans'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('🔒', 0, -10);
+        ctx.font = 'bold 7px Bebas Neue,sans-serif';
+        ctx.fillStyle='rgba(255,255,255,.2)'; ctx.shadowBlur=0;
+        ctx.fillText('LOCKED', 0, 4);
+      }
+    } else {
+      // Icon
+      ctx.font = '13px DM Sans';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(seg.ico, 0, -14);
+
+      // Label with auto-size
+      var labelText = seg.label;
+      var fontSize = 12;
+      ctx.font = 'bold ' + fontSize + 'px Bebas Neue,sans-serif';
+      while (fontSize > 7 && ctx.measureText(labelText).width > (r * arc * 0.72)) {
+        fontSize--;
+        ctx.font = 'bold ' + fontSize + 'px Bebas Neue,sans-serif';
+      }
+      if (seg.tokens > 0) {
+        ctx.shadowColor='rgba(201,146,42,.8)'; ctx.shadowBlur=6; ctx.fillStyle='#fde68a';
+      } else {
+        ctx.shadowColor='transparent'; ctx.fillStyle='rgba(255,255,255,.3)';
+      }
+      ctx.fillText(labelText, 0, 3);
+      ctx.shadowBlur=0;
+    }
+    ctx.restore();
+  });
+
+  // Center circle
+  var ringGrad = ctx.createLinearGradient(0,0,size,size);
+  ringGrad.addColorStop(0,'rgba(253,230,138,.6)'); ringGrad.addColorStop(.5,'rgba(201,146,42,.3)'); ringGrad.addColorStop(1,'rgba(253,230,138,.6)');
+  ctx.beginPath(); ctx.arc(cx,cy,r*.17,0,2*Math.PI); ctx.fillStyle='#12100d'; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,r*.17,0,2*Math.PI); ctx.strokeStyle=ringGrad; ctx.lineWidth=3; ctx.stroke();
+}
+
+// ─── MEGGA WHEEL DRAW ────────────────────────────────────
+function initMeggaWheel() {
+  meggaCanvas = document.getElementById('megga-canvas');
+  meggaCtx    = meggaCanvas.getContext('2d');
+  var dpr = window.devicePixelRatio || 1;
+  var size = 260;
+  meggaCanvas.width  = size * dpr;
+  meggaCanvas.height = size * dpr;
+  meggaCanvas.style.width  = size + 'px';
+  meggaCanvas.style.height = size + 'px';
+  meggaCtx.scale(dpr, dpr);
+  drawMeggaWheel(0);
+}
+
+function drawMeggaWheel(angle) {
+  if (!meggaCtx) return;
+  var size = 260, cx = size/2, cy = size/2, r = size/2 - 2;
+  var n = MEGGA_PRIZES.length, arc = 2*Math.PI/n;
+  meggaCtx.clearRect(0, 0, size, size);
+
+  var rimGrad = meggaCtx.createLinearGradient(0,0,size,size);
+  rimGrad.addColorStop(0,'#e9d5ff'); rimGrad.addColorStop(.25,'#7c3aed');
+  rimGrad.addColorStop(.5,'#a78bfa'); rimGrad.addColorStop(.75,'#4c1d95'); rimGrad.addColorStop(1,'#e9d5ff');
+  meggaCtx.beginPath(); meggaCtx.arc(cx,cy,r+2,0,2*Math.PI); meggaCtx.fillStyle=rimGrad; meggaCtx.fill();
+
+  MEGGA_PRIZES.forEach(function(seg, i) {
+    var start = angle + i*arc - Math.PI/2;
+    var end   = start + arc;
+    var grad  = meggaCtx.createRadialGradient(cx,cy,r*.1,cx,cy,r*.95);
+    grad.addColorStop(0, lighten(seg.color,.4));
+    grad.addColorStop(.6, seg.color);
+    grad.addColorStop(1, darken(seg.color,.35));
+    meggaCtx.beginPath(); meggaCtx.moveTo(cx,cy); meggaCtx.arc(cx,cy,r,start,end); meggaCtx.closePath();
+    meggaCtx.fillStyle=grad; meggaCtx.fill();
+    meggaCtx.beginPath(); meggaCtx.moveTo(cx,cy);
+    meggaCtx.lineTo(cx+Math.cos(start)*r, cy+Math.sin(start)*r);
+    meggaCtx.strokeStyle='rgba(124,58,237,.6)'; meggaCtx.lineWidth=1.5; meggaCtx.stroke();
+  });
+
+  MEGGA_PRIZES.forEach(function(seg, i) {
+    var mid = angle + i*arc - Math.PI/2 + arc/2;
+    var lr  = r * 0.65;
+    var lx  = cx + Math.cos(mid)*lr;
+    var ly  = cy + Math.sin(mid)*lr;
+    meggaCtx.save();
+    meggaCtx.translate(lx, ly);
+    meggaCtx.rotate(mid + Math.PI/2);
+    meggaCtx.font = '12px DM Sans'; meggaCtx.textAlign='center'; meggaCtx.textBaseline='middle';
+    meggaCtx.fillText(seg.ico, 0, -13);
+    var labelText = seg.label;
+    var fontSize = 11;
+    meggaCtx.font = 'bold ' + fontSize + 'px Bebas Neue,sans-serif';
+    while (fontSize > 6 && meggaCtx.measureText(labelText).width > (r * arc * 0.68)) {
+      fontSize--;
+      meggaCtx.font = 'bold ' + fontSize + 'px Bebas Neue,sans-serif';
+    }
+    if (seg.tokens > 0) {
+      meggaCtx.shadowColor='rgba(167,139,250,.9)'; meggaCtx.shadowBlur=8; meggaCtx.fillStyle='#e9d5ff';
+    } else {
+      meggaCtx.shadowColor='transparent'; meggaCtx.fillStyle='rgba(255,255,255,.25)';
+    }
+    meggaCtx.fillText(labelText, 0, 3);
+    meggaCtx.shadowBlur=0;
+    meggaCtx.restore();
+  });
+
+  meggaCtx.beginPath(); meggaCtx.arc(cx,cy,r*.17,0,2*Math.PI); meggaCtx.fillStyle='#0a0020'; meggaCtx.fill();
+  meggaCtx.beginPath(); meggaCtx.arc(cx,cy,r*.17,0,2*Math.PI); meggaCtx.strokeStyle='rgba(167,139,250,.5)'; meggaCtx.lineWidth=3; meggaCtx.stroke();
+}
+
+// ─── COLOR HELPERS ───────────────────────────────────────
+function hexToRgb(hex) {
+  if (!hex || hex.length < 7) return [0,0,0];
+  return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+}
+function lighten(hex, amt) {
+  try { var c=hexToRgb(hex); return 'rgb('+Math.min(255,Math.round(c[0]+(255-c[0])*amt))+','+Math.min(255,Math.round(c[1]+(255-c[1])*amt))+','+Math.min(255,Math.round(c[2]+(255-c[2])*amt))+')'; } catch(e){return hex;}
+}
+function darken(hex, amt) {
+  try { var c=hexToRgb(hex); return 'rgb('+Math.round(c[0]*(1-amt))+','+Math.round(c[1]*(1-amt))+','+Math.round(c[2]*(1-amt))+')'; } catch(e){return hex;}
+}
+
+// ─── SPIN LOGIC ──────────────────────────────────────────
+function getActiveSegments() {
+  // Filter out MEGGA segment if locked (weight=0)
+  return segments;
+}
+
+function pickSegment() {
+  var spinNumber = totalSpins + 1;
+  // First 21 spins: always Try Again (non-megga only)
+  if (spinNumber <= 21) {
+    var losers = [];
+    segments.forEach(function(s, i) { if (s.tokens === 0 && !s.isMegga) losers.push(i); });
+    return losers.length ? losers[Math.floor(Math.random() * losers.length)] : 0;
+  }
+  // Weighted random — MEGGA weight is 0 if locked, 1.5 if unlocked
+  var total = segments.reduce(function(a,s){ return a+(s.weight||0); },0);
+  var rand  = Math.random() * total, acc = 0;
+  for (var i = 0; i < segments.length; i++) {
+    acc += (segments[i].weight||0);
+    if (rand < acc) return i;
+  }
+  return 0;
+}
+
+function spinToIndex(idx, segsArr, currentA) {
+  var n   = segsArr.length;
+  var arc = 2 * Math.PI / n;
+  var segCenter  = idx * arc + arc/2;
+  var targetAngle = -segCenter;
+  var spins = 6 + Math.floor(Math.random() * 3);
+  while (targetAngle <= currentA) targetAngle += 2 * Math.PI;
+  return targetAngle + spins * 2 * Math.PI;
+}
+
+function doSpin() {
+  if (isSpinning) return;
+  var tokens = parseFloat(userProfile ? userProfile.tokens || 0 : 0);
+  if (tokens < betAmount) { showToast('⚠️ Need at least K' + betAmount + ' to spin!'); return; }
+  isSpinning = true;
+  document.getElementById('spin-btn').disabled = true;
+  document.getElementById('spin-btn').querySelector('.spin-txt').innerHTML = '<span class="spin-icon">🎡</span> Spinning…';
+
+  var winIdx     = pickSegment();
+  var finalAngle = spinToIndex(winIdx, segments, currentAngle);
+  var duration   = 4500;
+  var startT     = null;
+
+  function easeOut(t){ return 1 - Math.pow(1-t, 4); }
+  function animate(ts) {
+    if (!startT) startT = ts;
+    var prog = Math.min((ts-startT)/duration, 1);
+    var a = currentAngle + (finalAngle - currentAngle) * easeOut(prog);
+    drawWheel(a);
+    if (prog < 1) { requestAnimationFrame(animate); }
+    else {
+      var norm = ((finalAngle % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+      currentAngle = norm > Math.PI ? norm - 2*Math.PI : norm;
+      onSpinEnd(winIdx, tokens);
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+function onSpinEnd(winIdx, tokens) {
+  var seg = segments[winIdx];
+  totalSpins++;
+
+  // If MEGGA WHEEL segment — open the megga modal instead
+  if (seg.isMegga) {
+    isSpinning = false;
+    document.getElementById('spin-btn').disabled = false;
+    document.getElementById('spin-btn').querySelector('.spin-txt').innerHTML = '<span class="spin-icon">🎡</span> SPIN NOW';
+    // Save spin first, then open megga
+    var batch = db.batch();
+    var userRef = db.collection('users').doc(currentUser.uid);
+    batch.update(userRef, { tokens: tokens - betAmount, totalSpins: totalSpins });
+    var histRef = db.collection('spin-history').doc();
+    batch.set(histRef, {
+      uid: currentUser.uid,
+      result: 'MEGGA WHEEL',
+      tokensUsed: betAmount,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    batch.commit().then(function() {
+      userProfile.tokens = tokens - betAmount;
+      updateNavTokens(userProfile.tokens);
+      segments = buildSegments(betAmount);
+      showToast('👑 YOU HIT THE MEGGA WHEEL!');
+      setTimeout(openMeggaWheel, 600);
+    }).catch(function(e){ console.error('Spin save error:', e); });
+    return;
+  }
+
+  var newTokens = tokens - betAmount + seg.tokens;
+
+  // Write to spin-history using only fields allowed by security rules
+  var batch = db.batch();
+  var userRef = db.collection('users').doc(currentUser.uid);
+  batch.update(userRef, { tokens: newTokens, totalSpins: totalSpins });
+  var histRef = db.collection('spin-history').doc();
+  batch.set(histRef, {
+    uid: currentUser.uid,
+    result: seg.label,
+    tokensUsed: betAmount,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  batch.commit().then(function() {
+    userProfile.tokens = newTokens;
+    updateNavTokens(newTokens);
+    updateSpinsAvail();
+    // Rebuild segments in case MEGGA just unlocked
+    segments = buildSegments(betAmount);
+    drawWheel(currentAngle);
+    showWinOverlay(seg, false);
+    if (totalSpins === 22) showToast('🎉 Spin 22! You can now win!');
+    if (totalSpins === 75) { showToast('👑 MEGGA WHEEL UNLOCKED on the wheel!'); segments = buildSegments(betAmount); drawWheel(currentAngle); }
+    if (totalSpins % 50 === 0 && totalSpins > 50) showToast('🔥 ' + totalSpins + ' spins reached!');
+    loadHistory();
+    isSpinning = false;
+    document.getElementById('spin-btn').disabled = false;
+    document.getElementById('spin-btn').querySelector('.spin-txt').innerHTML = '<span class="spin-icon">🎡</span> SPIN NOW';
+  }).catch(function(e) {
+    isSpinning = false;
+    document.getElementById('spin-btn').disabled = false;
+    document.getElementById('spin-btn').querySelector('.spin-txt').innerHTML = '<span class="spin-icon">🎡</span> SPIN NOW';
+    console.error('Spin save error:', e);
+    showToast('❌ Save failed — check Firestore rules');
+  });
+}
+
+// ─── MEGGA WHEEL ─────────────────────────────────────────
+function openMeggaWheel() {
+  var hasFreeSpin = !meggaFreeUsed;
+  document.getElementById('btn-megga-spin').disabled = !hasFreeSpin;
+  document.getElementById('megga-spin-desc').innerHTML = hasFreeSpin
+    ? 'You\'ve earned <strong>1 FREE spin</strong> on the Megga Wheel!<br>Prizes from <strong>K6,000 to K1,000,000</strong>.'
+    : 'Free spin used. Buy an extra spin for <strong>K1,000</strong>.';
+  document.getElementById('megga-overlay').classList.add('show');
+  drawMeggaWheel(meggaAngle);
+}
+function closeMeggaWheel() {
+  if (isMeggaSpinning) return;
+  document.getElementById('megga-overlay').classList.remove('show');
+}
+
+function pickMeggaSegment() {
+  var total = MEGGA_PRIZES.reduce(function(a,s){ return a+(s.weight||1); },0);
+  var rand  = Math.random() * total, acc = 0;
+  for (var i = 0; i < MEGGA_PRIZES.length; i++) {
+    acc += (MEGGA_PRIZES[i].weight||1);
+    if (rand < acc) return i;
+  }
+  return MEGGA_PRIZES.length - 1;
+}
+
+function doMeggaSpin() {
+  if (isMeggaSpinning) return;
+  document.getElementById('btn-megga-spin').disabled = true;
+  document.getElementById('btn-megga-pay').disabled  = true;
+  isMeggaSpinning = true;
+
+  var winIdx     = pickMeggaSegment();
+  var finalAngle = spinToIndex(winIdx, MEGGA_PRIZES, meggaAngle);
+  var duration   = 6000;
+  var startT     = null;
+
+  function easeOut(t){ return 1 - Math.pow(1-t, 4.5); }
+  function animate(ts) {
+    if (!startT) startT = ts;
+    var prog = Math.min((ts-startT)/duration, 1);
+    var a = meggaAngle + (finalAngle - meggaAngle) * easeOut(prog);
+    drawMeggaWheel(a);
+    if (prog < 1) { requestAnimationFrame(animate); }
+    else {
+      var norm = ((finalAngle % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+      meggaAngle = norm > Math.PI ? norm - 2*Math.PI : norm;
+      onMeggaSpinEnd(winIdx);
+    }
+  }
+  requestAnimationFrame(animate);
+
+  meggaFreeUsed = true;
+  db.collection('users').doc(currentUser.uid).update({ meggaFreeUsed: true }).catch(function(){});
+}
+
+function doMeggaPay() {
+  var tokens = parseFloat(userProfile ? userProfile.tokens || 0 : 0);
+  if (tokens < 1000) { showToast('⚠️ Need K1,000 for a Megga spin!'); return; }
+  if (!confirm('Buy a Megga Wheel spin for K1,000?')) return;
+  var newBal = tokens - 1000;
+  db.collection('users').doc(currentUser.uid).update({ tokens: newBal }).then(function() {
+    userProfile.tokens = newBal;
+    updateNavTokens(newBal);
+    document.getElementById('btn-megga-pay').disabled = true;
+    document.getElementById('btn-megga-spin').disabled = false;
+    showToast('💜 Megga spin purchased!');
+  }).catch(function(e){ showToast('❌ Payment failed'); });
+}
+
+function onMeggaSpinEnd(winIdx) {
+  var seg = MEGGA_PRIZES[winIdx];
+  isMeggaSpinning = false;
+  document.getElementById('btn-megga-pay').disabled = false;
+
+  if (seg.tokens > 0) {
+    var newTokens = (userProfile.tokens || 0) + seg.tokens;
+    db.collection('users').doc(currentUser.uid).update({ tokens: newTokens }).then(function() {
+      userProfile.tokens = newTokens;
+      updateNavTokens(newTokens);
+      updateSpinsAvail();
+    });
+  }
+  setTimeout(function() {
+    closeMeggaWheel();
+    showWinOverlay(seg, true);
+    loadHistory();
+  }, 400);
+}
+
+// ─── WIN OVERLAY ─────────────────────────────────────────
+var winOverlayTimer = null;
+function showWinOverlay(seg, isMegga) {
+  var overlay = document.getElementById('win-overlay');
+  var card    = document.getElementById('win-card');
+  var ico     = document.getElementById('win-ico');
+  var label   = document.getElementById('win-label');
+  var amount  = document.getElementById('win-amount');
+  var sub     = document.getElementById('win-sub');
+  ico.textContent = seg.ico;
+  if (seg.tokens > 0) {
+    card.className   = 'win-card' + (isMegga ? ' megga-win-card' : '');
+    label.textContent  = isMegga ? '👑 MEGGA WIN' : 'YOU WON';
+    amount.className   = 'win-amount' + (isMegga ? ' megga-amt' : '');
+    amount.textContent = seg.label || ('K' + seg.tokens.toLocaleString());
+    sub.textContent    = 'Added to your balance! 🎉';
+    launchConfetti('win-confetti', isMegga);
+  } else {
+    card.className   = 'win-card lose-card';
+    label.textContent  = '';
+    amount.className   = 'win-amount lose';
+    amount.textContent = 'Try Again';
+    sub.textContent    = 'Better luck next spin 💪';
+    document.getElementById('win-confetti').innerHTML = '';
+  }
+  overlay.classList.add('show');
+  clearTimeout(winOverlayTimer);
+  winOverlayTimer = setTimeout(function() { overlay.classList.remove('show'); }, 2500);
+}
+
+// ─── CONFETTI ────────────────────────────────────────────
+function launchConfetti(id, purple) {
+  var wrap = document.getElementById(id);
+  wrap.innerHTML = '';
+  var colors = purple
+    ? ['#a78bfa','#e9d5ff','#c084fc','#7c3aed','#fde68a','#fff']
+    : ['#c9922a','#f0c040','#fde68a','#1a8040','#e8581a','#fff'];
+  for (var i = 0; i < 50; i++) {
+    var p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.cssText = 'left:'+Math.random()*100+'%;background:'+colors[Math.floor(Math.random()*colors.length)]+';animation-duration:'+(1.2+Math.random()*1.5)+'s;animation-delay:'+(Math.random()*.6)+'s;width:'+(4+Math.random()*7)+'px;height:'+(4+Math.random()*7)+'px;border-radius:'+(Math.random()>.5?'50%':'2px');
+    wrap.appendChild(p);
+  }
+}
+
+// ─── TOAST ───────────────────────────────────────────────
+var toastTimeout;
+function showToast(msg) {
+  var t = document.getElementById('milestone-toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(function(){ t.classList.remove('show'); }, 3200);
+}
+
+// ─── HISTORY ─────────────────────────────────────────────
+function loadHistory() {
+  db.collection('spin-history').where('uid','==',currentUser.uid).limit(20).get()
+    .then(function(snap) {
+      var h = document.getElementById('spin-history');
+      if (snap.empty) {
+        h.innerHTML = '<div style="font-size:.8rem;color:var(--text3);text-align:center;padding:22px">No spins yet!</div>';
+        return;
+      }
+      h.innerHTML = '';
+      var docs = [];
+      snap.forEach(function(doc){ docs.push(doc.data()); });
+      // Sort by createdAt descending
+      docs.sort(function(a,b){
+        var ta = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0) : 0;
+        var tb = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0) : 0;
+        return tb - ta;
+      });
+      docs.forEach(function(d) {
+        var isMeggaResult = d.result === 'MEGGA WHEEL';
+        var tokenWon = 0; // spin-history only stores result/tokensUsed now
+        var div = document.createElement('div');
+        div.className = 'hist-item' + (isMeggaResult ? ' big-win' : '');
+        div.innerHTML =
+          '<div>'
+            +'<div class="hi-prize">'+(d.result||'—')+'</div>'
+            +'<div class="hi-date">Bet K'+(d.tokensUsed||5)+'</div>'
+          +'</div>'
+          +'<div class="hi-tokens'+(isMeggaResult?' big':' none')+'">'
+            +(isMeggaResult ? '👑' : '—')
+          +'</div>';
+        h.appendChild(div);
+      });
+    })
+    .catch(function(e){ console.warn('History load:', e.message); });
+}
+
+// ─── DEPOSIT / WITHDRAW ──────────────────────────────────
+function handleDeposit() {
+  var amt = parseFloat(document.getElementById('dep-amount').value);
+  var err = document.getElementById('dep-err');
+  err.style.display='none';
+  if (!amt||amt<1){ err.textContent='Enter a valid amount.'; err.style.display='block'; return; }
+  if (amt > 500000){ err.textContent='Amount too large.'; err.style.display='block'; return; }
+  db.collection('notifications').add({
+    uid: currentUser.uid,
+    type: 'deposit',
+    amount: amt,
+    phone: userProfile.phone,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    status: 'pending'
+  }).then(function(){ closeDeposit(); window.location.href='tel:*115%23'; })
+    .catch(function(e){ err.textContent='Failed: '+e.message; err.style.display='block'; });
+}
+
+function handleWithdraw() {
+  var amt    = parseFloat(document.getElementById('wd-amount').value);
+  var tokens = userProfile ? userProfile.tokens||0 : 0;
+  var err    = document.getElementById('wd-err');
+  err.style.display='none';
+  if (!amt||amt<1){ err.textContent='Enter a valid amount.'; err.style.display='block'; return; }
+  if (amt>tokens){ err.textContent='You only have K'+tokens.toFixed(2)+' tokens.'; err.style.display='block'; return; }
+  if (amt > 500000){ err.textContent='Amount too large.'; err.style.display='block'; return; }
+  var nt = tokens - amt;
+  db.collection('users').doc(currentUser.uid).update({ tokens: nt }).then(function(){
+    return db.collection('notifications').add({
+      uid: currentUser.uid,
+      type: 'withdrawal',
+      amount: amt,
+      phone: userProfile.phone,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      status: 'pending'
+    });
+  }).then(function(){
+    userProfile.tokens=nt; updateNavTokens(nt); updateSpinsAvail(); closeWithdraw();
+    document.getElementById('wd-s-amount').textContent='K'+amt.toFixed(2);
+    document.getElementById('wd-success').classList.add('show');
+    launchConfetti('wd-confetti',false);
+  }).catch(function(e){ err.textContent='Failed: '+e.message; err.style.display='block'; });
+}
+
+// ─── EVENTS ──────────────────────────────────────────────
+document.getElementById('deposit-modal').addEventListener('click',function(e){if(e.target===this)closeDeposit();});
+document.getElementById('withdraw-modal').addEventListener('click',function(e){if(e.target===this)closeWithdraw();});
+document.getElementById('win-overlay').addEventListener('click',function(){clearTimeout(winOverlayTimer);this.classList.remove('show');});
+document.getElementById('megga-overlay').addEventListener('click',function(e){if(e.target===this&&!isMeggaSpinning)closeMeggaWheel();});
+
+// ─── HUB ANIMATION ───────────────────────────────────────
+(function(){
+  var hub = document.getElementById('wheel-hub');
+  var mHub= document.getElementById('megga-hub');
+  var r = 0, mr = 0;
+  function tick() {
+    if (isSpinning)      { r  += 6; hub.style.transform='translate(-50%,-50%) rotate('+r+'deg)'; }
+    else                 { hub.style.transform='translate(-50%,-50%)'; }
+    if (isMeggaSpinning) { mr += 8; mHub.style.transform='translate(-50%,-50%) rotate('+mr+'deg)'; }
+    else                 { mHub.style.transform='translate(-50%,-50%)'; }
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+</script>
+</body>
+</html>

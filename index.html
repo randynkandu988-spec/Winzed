@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WinZed — Zambia's Biggest Prize Giveaway</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --black:#0d0d0d;--off-white:#f7f5f2;--warm-white:#fffefb;--warm-gray:#e9e6df;
+  --text-muted:#7a756d;--border:#dbd7ce;--accent:#e8501a;--gold:#c9922a;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--off-white);color:var(--black);min-height:100vh;overflow-x:hidden}
+
+/* LOADING */
+#ov{display:none;position:fixed;inset:0;background:rgba(247,245,242,.95);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#ov.show{display:flex}
+.spin{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--black);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#ov p{font-size:.87rem;color:var(--text-muted);font-weight:500}
+
+/* NAV */
+nav{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:var(--warm-white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;gap:12px}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;letter-spacing:-.5px;display:flex;align-items:center;gap:7px;white-space:nowrap;flex-shrink:0}
+.logo span{color:var(--accent)}
+.logo{text-decoration: none;color: inherit;}
+.nav-links{display:flex;align-items:center;gap:20px;list-style:none;flex-shrink:0}
+.nav-links a{font-size:.85rem;font-weight:500;color:var(--text-muted);text-decoration:none;transition:color .2s;white-space:nowrap}
+.nav-links a:hover{color:var(--black)}
+.nav-cta{background:var(--black)!important;color:#fff!important;padding:8px 18px;border-radius:6px}
+
+/* NEW: orange sign-in button in nav */
+.nav-signin{
+  background:var(--accent);
+  color:#fff!important;
+  padding:8px 20px;
+  border-radius:100px;
+  font-size:.85rem;
+  font-weight:700;
+  text-decoration:none;
+  white-space:nowrap;
+  border:none;
+  cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+  transition:all .2s;
+  flex-shrink:0;
+  box-shadow:0 2px 10px rgba(232,80,26,.25);
+}
+.nav-signin:hover{background:#d4400e;transform:translateY(-1px);box-shadow:0 4px 16px rgba(232,80,26,.35)}
+
+.tab-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-around;
+  background:#fffefb;
+  border-bottom:1px solid var(--border, #dbd7ce);
+  position:sticky;
+  top:55px;
+  z-index:99;
+  transition:background .25s ease, border-color .25s ease;
+}
+
+.tab-item{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:2px;
+  padding:9px 8px;
+  font-size:.68rem;
+  font-weight:600;
+  color:var(--text2, #7a756d);
+  cursor:pointer;
+  border:none;
+  background:transparent;
+  font-family:'DM Sans',sans-serif;
+  position:relative;
+  transition:color .2s;
+  flex:1;
+  white-space:nowrap;
+  text-decoration:none;
+}
+
+.tab-item .tab-ico{
+  font-size:1.05rem;
+}
+
+.tab-item.active{
+  color: #e8501a;
+}
+
+.tab-item.active::after{
+  content:'';
+  position:absolute;
+  bottom:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:28px;
+  height:2.5px;
+  background: #e8501a;
+  border-radius:2px 2px 0 0;
+}
+
+.tab-item:hover{
+  color:var(--text, #0d0d0d);
+}
+
+/* ── PAGE WRAP ── */
+.page-wrap{max-width:580px;margin:0 auto;padding:26px 18px 130px}
+
+/* ── HERO ── */
+.hero{display:flex;flex-direction:column;align-items:center;padding:60px 24px 0;background:var(--off-white)}
+
+/* Big centered title */
+.hero-title{text-align:center;margin-bottom:36px}
+.hero-title h1{font-family:'Syne',sans-serif;font-size:clamp(2.4rem,5vw,4.2rem);font-weight:800;line-height:1.05;letter-spacing:-2px;color:var(--black)}
+.hero-title h1 em{font-style:normal;color:var(--accent)}
+
+/* ── BILLBOARD ── */
+.billboard{
+  width:100%;max-width:860px;
+  background:rgba(255,255,255,0.18);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border:1.5px solid rgba(255,255,255,0.55);
+  border-radius:20px;
+  box-shadow:0 8px 40px rgba(232,80,26,0.10), 0 2px 0 rgba(255,255,255,0.7) inset;
+  padding:22px 0;
+  overflow:hidden;
+  position:relative;
+  margin-bottom:44px;
+}
+.billboard::before{
+  content:'';position:absolute;inset:0;border-radius:20px;
+  box-shadow:0 0 0 1px rgba(232,80,26,0.18), 0 0 30px rgba(232,80,26,0.08);
+  pointer-events:none;
+}
+.billboard-track{
+  display:flex;
+  gap:0;
+  white-space:nowrap;
+  animation:scroll-left 18s linear infinite;
+  width:max-content;
+}
+.billboard:hover .billboard-track{animation-play-state:paused}
+@keyframes scroll-left{
+  0%{transform:translateX(0)}
+  100%{transform:translateX(-50%)}
+}
+.billboard-item{
+  display:inline-flex;align-items:center;gap:14px;
+  padding:0 32px;
+  font-family:'Syne',sans-serif;
+  font-size:clamp(1.1rem,2.2vw,1.55rem);
+  font-weight:800;
+  letter-spacing:-.5px;
+  color:var(--black);
+  border-right:1.5px solid rgba(232,80,26,0.15);
+}
+.billboard-item:last-child{border-right:none}
+.billboard-item .bi-emo{font-size:1.6rem;line-height:1}
+.billboard-item .bi-val{
+  font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--gold);background:#fff8ec;border:1px solid #f0d99a;
+  padding:2px 9px;border-radius:100px;margin-left:4px;
+}
+
+/* ── BOTTOM SPLIT: auth box ── */
+.hero-bottom{
+  width:100%;max-width:860px;
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:0;
+  background:var(--warm-white);
+  border:1px solid var(--border);
+  border-radius:20px;
+  overflow:hidden;
+  margin-bottom:60px;
+  box-shadow:0 4px 32px rgba(0,0,0,.07);
+}
+.hero-bottom-left{
+  padding:36px 36px;
+  display:flex;flex-direction:column;justify-content:center;gap:18px;
+  border-right:1px solid var(--border);
+  background:var(--black);
+  color:#fff;
+}
+.hbl-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:4px}
+.hbl-title{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;line-height:1.2;letter-spacing:-.4px}
+.hbl-title em{font-style:normal;color:var(--accent)}
+.hbl-stats{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.hbl-stat{display:flex;align-items:center;gap:10px;font-size:.82rem;color:rgba(255,255,255,.55)}
+.hbl-stat strong{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:#fff}
+.hbl-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0}
+
+.typing-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 10px;
+}
+
+#typing-text {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 1.5rem;
+  color: green;
+  border-right: 3px solid #00ffcc;
+  white-space: nowrap;
+  overflow: hidden;
+  animation: blink 0.7s infinite;
+}
+
+@keyframes blink {
+  0% { border-color: transparent; }
+  50% { border-color: #00ffcc; }
+  100% { border-color: transparent; }
+}
+
+/* AUTH PANEL */
+.hero-right{padding:36px 36px;display:flex;align-items:center;justify-content:center}
+.auth-box{width:100%;max-width:340px}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--warm-gray);border-radius:10px;padding:4px;margin-bottom:22px}
+.tab-btn{background:transparent;border:none;padding:10px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;color:var(--text-muted);border-radius:7px;cursor:pointer;transition:all .2s}
+.tab-btn.active{background:var(--warm-white);color:var(--black);box-shadow:0 1px 4px rgba(0,0,0,.08);font-weight:600}
+.auth-form{display:flex;flex-direction:column;gap:13px}
+.auth-form h2{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;letter-spacing:-.5px}
+.auth-form>p{font-size:.81rem;color:var(--text-muted);line-height:1.5}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:.78rem;font-weight:600}
+.field input{padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem;background:var(--off-white);color:var(--black);outline:none;transition:border-color .2s,box-shadow .2s;width:100%}
+.field input:focus{border-color:var(--black);background:#fff;box-shadow:0 0 0 3px rgba(13,13,13,.07)}
+.pw-wrap{display:flex;align-items:center;border:1.5px solid var(--border);border-radius:8px;background:var(--off-white);overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.pw-wrap:focus-within{border-color:var(--black);background:#fff;box-shadow:0 0 0 3px rgba(13,13,13,.07)}
+.pfx{display:flex;align-items:center;gap:5px;padding:10px 10px 10px 13px;background:var(--warm-gray);border-right:1.5px solid var(--border);font-size:.85rem;font-weight:600;white-space:nowrap;user-select:none;flex-shrink:0}
+.pw-wrap input{border:none;border-radius:0;background:transparent;padding:10px 13px;flex:1;outline:none;font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--black)}
+.hint{font-size:.72rem;color:var(--text-muted);margin-top:2px}
+.btn-p{background:var(--black);color:#fff;border:none;padding:12px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.93rem;font-weight:600;cursor:pointer;transition:all .2s;width:100%}
+.btn-p:hover:not(:disabled){background:var(--accent);transform:translateY(-1px)}
+.btn-p:disabled{background:var(--warm-gray);color:var(--text-muted);cursor:not-allowed}
+.auth-footer{text-align:center;font-size:.78rem;color:var(--text-muted);padding-top:10px;border-top:1px solid var(--border);line-height:1.6}
+.forgot-link{display:block;text-align:right;font-size:.76rem;color:var(--text-muted);cursor:pointer;margin-top:-6px;margin-bottom:2px;text-decoration:underline}
+.forgot-link:hover{color:var(--black)}
+.err{background:#fef2f0;border:1px solid #f5c6bd;color:#c0392b;border-radius:7px;padding:9px 13px;font-size:.8rem;font-weight:500;display:none}
+.suc{background:#f0fdf4;border:1px solid #a7f3d0;color:#166534;border-radius:7px;padding:9px 13px;font-size:.8rem;font-weight:500;display:none}
+
+/* FORGOT PASSWORD MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:370px;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal h3{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:700;margin-bottom:6px;letter-spacing:-.3px}
+.modal>p{font-size:.81rem;color:var(--text-muted);margin-bottom:18px;line-height:1.55}
+.btn-sec{background:var(--warm-gray);color:var(--black);border:none;padding:11px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.86rem;font-weight:600;cursor:pointer;width:100%;margin-top:10px;transition:all .2s}
+.btn-sec:hover{background:var(--border)}
+
+/* HOW IT WORKS */
+.how{background:var(--black);color:#fff;padding:56px 60px}
+.how h2{font-family:'Syne',sans-serif;font-size:1.7rem;font-weight:700;margin-bottom:36px;text-align:center;letter-spacing:-.5px}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.step{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:22px}
+.sn{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:var(--accent);margin-bottom:8px}
+.st{font-weight:600;font-size:.9rem;margin-bottom:5px}
+.sd{font-size:.8rem;color:rgba(255,255,255,.5);line-height:1.6}
+footer{padding:24px 60px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:.78rem;color:var(--text-muted)}
+
+@media(max-width:900px){
+  .hero{padding:40px 16px 0}
+  .hero-bottom{grid-template-columns:1fr;margin-bottom:40px}
+  .hero-bottom-left{border-right:none;border-bottom:1px solid rgba(255,255,255,.08);padding:28px 24px}
+  .hero-right{padding:28px 24px}
+  nav{padding:14px 20px}.nav-links{display:none}
+  .how{padding:36px 24px}.steps{grid-template-columns:1fr 1fr}
+  footer{padding:18px 24px;flex-direction:column;gap:6px;text-align:center}
+  .hero-title h1{font-size:2.2rem;letter-spacing:-1px}
+}
+@media(max-width:480px){.steps{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="ov"><div class="spin"></div><p id="ov-txt">Please wait...</p></div>
+
+<!-- FORGOT PASSWORD MODAL -->
+<div class="modal-bg" id="forgot-modal">
+  <div class="modal">
+    <h3>Forgot Your Password?</h3>
+    <p>Enter your number below, then tap the button to message us on WhatsApp. We'll reset it manually — usually within minutes.</p>
+    <div id="forgot-err" class="err" style="margin-bottom:12px"></div>
+    <div class="field" style="margin-bottom:14px">
+      <label>Your Zambian Phone Number</label>
+      <div class="pw-wrap">
+        <div class="pfx">🇿🇲 +260</div>
+        <input type="tel" id="fp-phone" placeholder="97 123 4567" maxlength="9" inputmode="numeric"/>
+      </div>
+    </div>
+    <a href="#" onclick="return openForgotWA(event)" style="
+      display:flex;align-items:center;justify-content:center;gap:9px;
+      background:#1fad54;color:#fff;border-radius:9px;padding:13px;
+      font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:700;
+      text-decoration:none;box-shadow:0 3px 12px rgba(31,173,84,.22);transition:all .2s;
+    ">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      WhatsApp Us to Reset Password
+    </a>
+    <button class="btn-sec" onclick="closeForgot()">Cancel</button>
+  </div>
+</div>
+
+<nav>
+  <a href="index.html" class="logo">🇿🇲 Win<span>Zed</span></a>
+  <ul class="nav-links">
+    <li><a href="#how">How It Works</a></li>
+  </ul>
+  <!-- Orange sign in button always visible in nav -->
+  <button class="nav-signin" onclick="scrollToLogin()">Sign In</button>
+</nav>
+
+<div class="tab-bar">
+  <button class="tab-item active" id="tab-home" onclick="setTab('home')">
+    <span class="tab-ico">🏠</span>Home
+  </button>
+  <!-- Predict, Wheel, Megga scroll to login section and switch to login tab -->
+  <a class="tab-item" href="#" onclick="scrollToLogin();return false;">
+    <span class="tab-ico">⚽</span>Predict
+  </a>
+  <a class="tab-item" href="#" onclick="scrollToLogin();return false;">
+    <span class="tab-ico">🎡</span>Wheel
+  </a>
+  <a class="tab-item" href="#" onclick="scrollToLogin();return false;">
+    <span class="tab-ico">🎰</span>Megga
+  </a>
+</div>
+
+<!-- HERO -->
+<section class="hero" id="hero-section">
+
+  <!-- Big centered title -->
+  <div class="hero-title">
+    <h1>Stand a Chance to <em>Win Big</em><br>in Zambia. 🇿🇲</h1>
+  </div>
+
+  <!-- Frosted glass scrolling billboard -->
+  <div class="billboard">
+    <div class="billboard-track" id="billboard-track">
+      <!-- First set -->
+      <div class="billboard-item"><span class="bi-emo">📱</span> iPhone 15 Pro Max <span class="bi-val">Prize 1</span></div>
+      <div class="billboard-item"><span class="bi-emo">💻</span> Dell XPS 15 (i9) <span class="bi-val">Prize 2</span></div>
+      <div class="billboard-item"><span class="bi-emo">🎮</span> PlayStation 5 <span class="bi-val">Prize 3</span></div>
+      <div class="billboard-item"><span class="bi-emo">🇿🇲</span> Only K10 to Enter</div>
+      <div class="billboard-item"><span class="bi-emo">🏆</span> Win One of These Prizes</div>
+      <div class="billboard-item"><span class="bi-emo">🔥</span> Real Prizes. Real Winner.</div>
+      <!-- Duplicate for seamless loop -->
+      <div class="billboard-item"><span class="bi-emo">📱</span> iPhone 15 Pro Max <span class="bi-val">Prize 1</span></div>
+      <div class="billboard-item"><span class="bi-emo">💻</span> Dell XPS 15 (i9) <span class="bi-val">Prize 2</span></div>
+      <div class="billboard-item"><span class="bi-emo">🎮</span> PlayStation 5 <span class="bi-val">Prize 3</span></div>
+      <div class="billboard-item"><span class="bi-emo">🇿🇲</span> Only K10 to Enter</div>
+      <div class="billboard-item"><span class="bi-emo">🏆</span> Win One of These Prizes</div>
+      <div class="billboard-item"><span class="bi-emo">🔥</span> Real Prizes. Real Winner.</div>
+    </div>
+  </div>
+
+  <!-- Auth + info split -->
+  <div class="hero-bottom" id="auth-section">
+    <div class="hero-bottom-left">
+      <div class="typing-container">
+        <span id="typing-text"></span>
+      </div>
+    </div>
+ 
+    <div class="hero-right">
+      <div class="auth-box">
+        <div class="auth-tabs">
+          <button class="tab-btn active" id="tab-su" onclick="switchTab('signup')">Create Account</button>
+          <button class="tab-btn" id="tab-li" onclick="switchTab('login')">Sign In</button>
+        </div>
+
+        <!-- SIGN UP -->
+        <div id="form-su" class="auth-form">
+          <h2>Create your account</h2>
+          <p>Sign up with your Zambian number to enter the draw.</p>
+          <div id="su-err" class="err"></div>
+          <div id="su-suc" class="suc"></div>
+          <div class="field">
+            <label>Full REAL Name (as on your airtel number)</label>
+            <input type="text" id="su-name" placeholder="e.g. Chanda Mwamba" autocomplete="name"/>
+          </div>
+          <div class="field">
+            <label>Zambian Phone Number</label>
+            <div class="pw-wrap">
+              <div class="pfx">🇿🇲 +260</div>
+              <input type="tel" id="su-phone" placeholder="97 123 4567" maxlength="9" inputmode="numeric"/>
+            </div>
+            <span class="hint">9 digits after +260 · e.g. 971234567</span>
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" id="su-pass" placeholder="At least 6 characters"/>
+          </div>
+          <div class="field">
+            <label>Confirm Password</label>
+            <input type="password" id="su-pass2" placeholder="Repeat password"/>
+          </div>
+          <button class="btn-p" id="su-btn" onclick="handleSignup()">Create Account & Enter Draw →</button>
+          <div class="auth-footer">Already have an account? <a href="#" onclick="switchTab('login');return false;" style="color:var(--black);font-weight:600">Sign In</a></div>
+        </div>
+
+        <!-- SIGN IN -->
+        <div id="form-li" class="auth-form" style="display:none">
+          <h2>Welcome back</h2>
+          <p>Sign in to check your entry or enter the draw.</p>
+          <div id="li-err" class="err"></div>
+          <div class="field">
+            <label>Zambian Phone Number</label>
+            <div class="pw-wrap">
+              <div class="pfx">🇿🇲 +260</div>
+              <input type="tel" id="li-phone" placeholder="97 123 4567" maxlength="9" inputmode="numeric"/>
+            </div>
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" id="li-pass" placeholder="Your password"/>
+          </div>
+          <span class="forgot-link" onclick="openForgot()">Forgot password?</span>
+          <button class="btn-p" id="li-btn" onclick="handleLogin()">Sign In →</button>
+          <div class="auth-footer">No account yet? <a href="#" onclick="switchTab('signup');return false;" style="color:var(--black);font-weight:600">Sign Up Free</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="how" id="how">
+  <h2>How It Works</h2>
+  <div class="steps">
+    <div class="step"><div class="sn">01</div><div class="st">Sign Up Free</div><div class="sd">Create your account with your Zambian mobile number.</div></div>
+    <div class="step"><div class="sn">02</div><div class="st">Choose Your Prize</div><div class="sd">Pick the prize you want to win from the three available.</div></div>
+    <div class="step"><div class="sn">03</div><div class="st">Send K10 via Airtel Money</div><div class="sd">Send K10 and WhatsApp us your payment screenshot as proof.</div></div>
+    <div class="step"><div class="sn">04</div><div class="st">Winner is Drawn</div><div class="sd">One lucky winner randomly selected after verification. No favourites.</div></div>
+  </div>
+</section>
+<footer><span>© 2026 WinZed · Kabwe, Zambia 🇿🇲</span><span>Legitimate. Transparent. Zambian-run.</span></footer>
+
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyA-vSOEKp4v6aPud9enjiA-AzuQVl53Wto",
+  authDomain:"winzed-413be.firebaseapp.com",
+  projectId:"winzed-413be",
+  storageBucket:"winzed-413be.firebasestorage.app",
+  messagingSenderId:"1092518915452",
+  appId:"1:1092518915452:web:016a41f0d250afe7d288f9"
+});
+var auth=firebase.auth(), db=firebase.firestore();
+
+function toEmail(p){ return 'zm260'+p.replace(/\s/g,'')+'@winzed.app'; }
+function validPhone(n){ return /^[759]\d{8}$/.test(n.replace(/\s/g,'')); }
+function showOv(m){ document.getElementById('ov-txt').textContent=m||'Please wait...'; document.getElementById('ov').classList.add('show'); }
+function hideOv(){ document.getElementById('ov').classList.remove('show'); }
+function showE(id,m){ var e=document.getElementById(id); e.textContent=m; e.style.display='block'; setTimeout(function(){e.style.display='none';},7000); }
+function showS(id,m){ var e=document.getElementById(id); e.textContent=m; e.style.display='block'; }
+function setBtn(id,t,d){ var b=document.getElementById(id); b.textContent=t; b.disabled=d; }
+
+function switchTab(t){
+  document.getElementById('form-su').style.display=t==='signup'?'flex':'none';
+  document.getElementById('form-li').style.display=t==='login'?'flex':'none';
+  document.getElementById('tab-su').classList.toggle('active',t==='signup');
+  document.getElementById('tab-li').classList.toggle('active',t==='login');
+}
+
+/* Scroll to auth section and switch to login tab */
+function scrollToLogin(){
+  switchTab('login');
+  var el = document.getElementById('auth-section');
+  if(el){
+    el.scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+}
+
+function handleSignup(){
+  var name=document.getElementById('su-name').value.trim();
+  var phone=document.getElementById('su-phone').value.replace(/\s/g,'');
+  var pass=document.getElementById('su-pass').value;
+  var pass2=document.getElementById('su-pass2').value;
+  if(!name||name.length<3) return showE('su-err','Please enter your full name (as on your ID).');
+  if(!/^[a-zA-Z\s\-']+$/.test(name)) return showE('su-err','Name should only contain letters — no numbers or symbols.');
+  if(!validPhone(phone)) return showE('su-err','Enter a valid Zambian number — 9 digits starting with 7, 5, or 9.');
+  if(pass.length<6) return showE('su-err','Password must be at least 6 characters.');
+  if(pass!==pass2) return showE('su-err','Passwords do not match.');
+  showOv('Creating your account...');
+  setBtn('su-btn','Creating...',true);
+  auth.createUserWithEmailAndPassword(toEmail(phone),pass)
+    .then(function(c){
+      return db.collection('users').doc(c.user.uid).set({
+        uid:c.user.uid,name:name,phone:'+260'+phone,
+        paid:false,chosenPrize:null,txnRef:null,
+        proofUrl:null,senderName:null,verified:false,
+        enteredAt:null,createdAt:new Date().toISOString(),
+        loginCount:0,lastLogin:null
+      });
+    })
+    .then(function(){ showS('su-suc','✅ Account created! Redirecting...'); setTimeout(function(){ window.location.href='main.html'; },1000); })
+    .catch(function(e){
+      hideOv(); setBtn('su-btn','Create Account & Enter Draw →',false);
+      showE('su-err',
+        e.code==='auth/email-already-in-use'?'This number is already registered — sign in instead.':
+        e.code==='auth/network-request-failed'?'No internet. Check your data and retry.':
+        'Error: '+e.message);
+    });
+}
+
+function handleLogin(){
+  var phone=document.getElementById('li-phone').value.replace(/\s/g,'');
+  var pass=document.getElementById('li-pass').value;
+  if(!validPhone(phone)) return showE('li-err','Enter a valid Zambian number.');
+  if(!pass) return showE('li-err','Please enter your password.');
+  showOv('Signing you in...');
+  setBtn('li-btn','Signing in...',true);
+  auth.signInWithEmailAndPassword(toEmail(phone),pass)
+    .then(function(c){
+      db.collection('users').doc(c.user.uid).update({
+        lastLogin:new Date().toISOString(),
+        loginCount:firebase.firestore.FieldValue.increment(1)
+      }).catch(function(){});
+      setTimeout(function(){ window.location.href='main.html'; }, 800);
+    })
+    .catch(function(e){
+      hideOv(); setBtn('li-btn','Sign In →',false);
+      showE('li-err',
+        (e.code==='auth/user-not-found'||e.code==='auth/invalid-credential')?'No account for this number — please sign up.':
+        e.code==='auth/wrong-password'?'Incorrect password — try again.':
+        e.code==='auth/too-many-requests'?'Too many attempts. Wait a few minutes.':
+        e.code==='auth/network-request-failed'?'No internet. Check your data.':
+        'Error: '+e.message);
+    });
+}
+
+function openForgot(){ document.getElementById('forgot-modal').classList.add('show'); }
+function closeForgot(){ document.getElementById('forgot-modal').classList.remove('show'); document.getElementById('forgot-err').style.display='none'; }
+function openForgotWA(e){
+  e.preventDefault();
+  var phone=document.getElementById('fp-phone').value.replace(/\s/g,'');
+  if(!validPhone(phone)){ showE('forgot-err','Please enter your number first (9 digits starting with 7 or 9).'); return false; }
+  var msg=encodeURIComponent('Hi WinZed 🇿🇲\nI forgot my password.\nMy registered number is: +260'+phone+'\nPlease help me reset it. Thank you.');
+  window.open('https://wa.me/260775443280?text='+msg,'_blank');
+  closeForgot();
+  return false;
+}
+document.getElementById('forgot-modal').addEventListener('click',function(e){ if(e.target===this) closeForgot(); });
+
+const words = ["WIN BIG", "GET PAID", "ENTER NOW"];
+let wordIndex = 0;
+let charIndex = 0;
+let isDeleting = false;
+const speed = 100;
+const delayBetweenWords = 1200;
+function typeLoop() {
+  const el = document.getElementById("typing-text");
+  const currentWord = words[wordIndex];
+  if (!isDeleting) {
+    el.innerHTML = currentWord.substring(0, charIndex + 1);
+    charIndex++;
+    if (charIndex === currentWord.length) {
+      isDeleting = true;
+      setTimeout(typeLoop, delayBetweenWords);
+      return;
+    }
+  } else {
+    el.innerHTML = currentWord.substring(0, charIndex - 1);
+    charIndex--;
+    if (charIndex === 0) {
+      isDeleting = false;
+      wordIndex = (wordIndex + 1) % words.length;
+    }
+  }
+  setTimeout(typeLoop, isDeleting ? 50 : speed);
+}
+window.onload = typeLoop;
+</script>
+</body>
+</html>

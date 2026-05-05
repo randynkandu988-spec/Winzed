@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WinZed — Predict 6</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+[data-theme="light"]{--bg:#f0eeea;--surface:#ffffff;--surface2:#edeae4;--border:#ddd9d1;--text:#111010;--text2:#6b6660;--text3:#9c9690;--nav-bg:#ffffff;--accent:#d94e18;--green:#1a6e35;--menu-bg:#111010;}
+[data-theme="dark"]{--bg:#101010;--surface:#1c1b19;--surface2:#242220;--border:#2e2b28;--text:#edeae4;--text2:#8a857d;--text3:#5a5550;--nav-bg:#141312;--accent:#e8581a;--green:#1e8040;--menu-bg:#141312;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background .25s,color .25s}
+
+/* ── MENUS & MODALS ── */
+.menu-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:200}
+.menu-overlay.open{display:block}
+.side-menu{position:fixed;right:0;top:0;bottom:0;width:255px;background:var(--menu-bg);border-left:1px solid rgba(255,255,255,.07);z-index:201;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+.side-menu.open{transform:translateX(0)}
+.menu-top{padding:22px 18px 18px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between}
+.menu-av{width:38px;height:38px;background:var(--accent);border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.95rem;font-weight:800;flex-shrink:0}
+.menu-name{font-family:"Syne",sans-serif;font-weight:700;font-size:.88rem;color:#edeae4}
+.menu-phone{font-size:.68rem;color:rgba(255,255,255,.32);margin-top:1px}
+.menu-close{background:rgba(255,255,255,.07);border:none;border-radius:8px;width:29px;height:29px;cursor:pointer;color:rgba(255,255,255,.38);font-size:.85rem;display:flex;align-items:center;justify-content:center}
+.menu-close:hover{background:rgba(255,255,255,.13);color:#edeae4}
+.menu-items{padding:12px 10px;display:flex;flex-direction:column;gap:2px;flex:1}
+.menu-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;color:rgba(255,255,255,.52);font-family:"DM Sans",sans-serif;font-size:.83rem;font-weight:500}
+.menu-item:hover{background:rgba(255,255,255,.07);color:#edeae4}
+.menu-item .mi{font-size:.88rem;width:19px;text-align:center;flex-shrink:0}
+.menu-item.danger{color:#f87171}
+.menu-item.danger:hover{background:rgba(220,38,38,.14)}
+.menu-divider{height:1px;background:rgba(255,255,255,.06);margin:5px 10px}
+.menu-bottom{padding:12px 18px;border-top:1px solid rgba(255,255,255,.06)}
+.menu-ver{font-size:.61rem;color:rgba(255,255,255,.18);text-align:center}
+
+/* ── DEPOSIT / WITHDRAW ── */
+.deposit-modal,.withdraw-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:flex-end;justify-content:center}
+.deposit-modal.show,.withdraw-modal.show{display:flex}
+.deposit-sheet,.withdraw-sheet{background:var(--surface);border-radius:22px 22px 0 0;padding:24px 20px 36px;width:100%;max-width:480px}
+.deposit-sheet h3,.withdraw-sheet h3{font-family:"Syne",sans-serif;font-size:1.05rem;font-weight:800;margin-bottom:4px}
+.deposit-sheet p,.withdraw-sheet p{font-size:.78rem;color:var(--text2);margin-bottom:18px;line-height:1.5}
+.deposit-input-wrap{display:flex;align-items:center;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px;background:var(--surface2)}
+.dep-pfx{padding:12px 14px;font-weight:700;font-size:.9rem;color:var(--text2);border-right:1.5px solid var(--border);white-space:nowrap}
+.deposit-input-wrap input{border:none;background:transparent;padding:12px 14px;font-family:"DM Sans",sans-serif;font-size:.95rem;color:var(--text);outline:none;flex:1}
+.btn-deposit{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:13px;font-family:"DM Sans",sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;width:100%}
+.btn-dep-cancel,.btn-wd-cancel{background:var(--surface2);color:var(--text);border:none;border-radius:10px;padding:11px;font-family:"DM Sans",sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;width:100%;margin-top:8px}
+.btn-withdraw{background:var(--green);color:#fff;border:none;border-radius:10px;padding:13px;font-family:"DM Sans",sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;width:100%}
+.wd-success{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;align-items:center;justify-content:center;padding:24px}
+.wd-success.show{display:flex}
+.wd-success-card{background:var(--surface);border-radius:24px;padding:32px 24px;max-width:320px;width:100%;text-align:center}
+.wd-s-ico{font-size:3rem;margin-bottom:12px;display:block}
+.wd-s-title{font-family:"Syne",sans-serif;font-size:1.2rem;font-weight:800;color:var(--green);margin-bottom:8px}
+.wd-s-msg{font-size:.82rem;color:var(--text2);line-height:1.65;margin-bottom:20px}
+.wd-s-amount{font-family:"Syne",sans-serif;font-size:2rem;font-weight:800;color:var(--text);margin-bottom:6px}
+.wd-s-close{background:var(--green);color:#fff;border:none;border-radius:12px;padding:13px;font-family:"DM Sans",sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;width:100%}
+.err{background:#fff0ee;border:1px solid #f5c6bd;color:#c0392b;border-radius:8px;padding:8px 12px;font-size:.75rem;margin-bottom:9px;display:none}
+
+/* ── NAV ── */
+nav{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 6px;background:var(--nav-bg);position:sticky;top:0;z-index:100}
+.logo{font-family:"Syne",sans-serif;font-weight:800;font-size:1.1rem;letter-spacing:-.5px;display:flex;align-items:center;gap:5px;color:var(--text);white-space:nowrap}
+.logo span{color:var(--accent)}
+.hamburger{background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;flex-shrink:0}
+.hbar{width:13px;height:1.5px;background:var(--text);border-radius:2px}
+.token-pill{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1.5px solid var(--border);border-radius:100px;padding:4px 4px 4px 10px}
+.tp-amt{font-family:"Syne",sans-serif;font-size:.78rem;font-weight:800;color:var(--text)}
+.tp-add{background:var(--green);color:#fff;border:none;border-radius:100px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;cursor:pointer;flex-shrink:0;line-height:1}
+
+/* ── TABS ── */
+.tab-bar{display:flex;align-items:center;justify-content:space-around;background:var(--nav-bg);border-bottom:1px solid var(--border);position:sticky;top:48px;z-index:99}
+.tab-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 8px;font-size:.68rem;font-weight:600;color:var(--text2);cursor:pointer;border:none;background:transparent;font-family:"DM Sans",sans-serif;position:relative;transition:color .2s;flex:1;white-space:nowrap;text-decoration:none}
+.tab-item .tab-ico{font-size:1.05rem}
+.tab-item.active{color:var(--accent)}
+.tab-item.active::after{content:"";position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:28px;height:2.5px;background:var(--accent);border-radius:2px 2px 0 0}
+.predict-tabs{display:flex;border-bottom:2px solid var(--border);background:var(--surface);overflow-x:auto}
+.ptab{flex:1;padding:12px 8px;font-size:.8rem;font-weight:700;color:var(--text2);text-align:center;cursor:pointer;border:none;background:transparent;font-family:"DM Sans",sans-serif;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .2s}
+.ptab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* ── ROUND HEADER ── */
+.round-section{background:var(--surface);padding:16px 16px 0}
+.round-header-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding-bottom:16px}
+.rn-round{font-family:"Syne",sans-serif;font-size:1rem;font-weight:800;color:var(--text);margin-bottom:4px}
+.rn-datetime{font-size:.72rem;color:var(--text2);font-weight:500;line-height:1.4}
+.rn-status-dot{display:inline-block;width:7px;height:7px;background:var(--green);border-radius:50%;margin-right:5px;vertical-align:middle}
+.countdown-boxes{display:flex;gap:4px;align-items:flex-start;flex-shrink:0}
+.cd-box{display:flex;flex-direction:column;align-items:center;gap:1px}
+.cd-num{font-family:"Syne",sans-serif;font-size:.92rem;font-weight:800;color:#fff;background:var(--text);border-radius:5px;padding:5px 7px;min-width:32px;text-align:center;line-height:1}
+[data-theme="dark"] .cd-num{background:#2e2b28}
+.cd-label{font-size:.48rem;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;text-align:center}
+.section-line{height:1px;background:var(--border)}
+
+/* ── MATCHES ── */
+.matches-section{background:var(--surface);padding:6px 0 6px}
+.match-row{display:flex;align-items:center;justify-content:center;padding:14px 16px}
+.team-cell{display:flex;flex-direction:column;align-items:center;gap:6px;width:120px;flex-shrink:0}
+.team-name{font-family:"Syne",sans-serif;font-size:.68rem;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.04em;text-align:center;line-height:1.25;width:100%}
+.jersey svg{width:42px;height:36px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.2))}
+.match-vs{font-family:"Syne",sans-serif;font-size:.65rem;font-weight:800;color:var(--text3);letter-spacing:.1em;flex-shrink:0;width:30px;text-align:center}
+
+/* ── PREDICT BUTTON ── */
+.predict-btn{display:block;width:calc(100% - 32px);margin:14px 16px 6px;border:none;border-radius:6px;padding:15px;font-family:"Syne",sans-serif;font-size:.9rem;font-weight:800;cursor:pointer;text-align:center;text-transform:uppercase;letter-spacing:.07em;text-decoration:none;transition:background .2s,color .2s;}
+.predict-btn.state-predict{background:#7ED321;color:#111;}
+.predict-btn.state-predict:hover{background:#6bc41e}
+.predict-btn.state-view{background:transparent;border:2px solid var(--green);color:var(--green);}
+.predict-btn.state-view:hover{background:var(--green);color:#fff}
+.predict-btn.state-done{background:var(--accent);color:#fff;border:none;}
+.predict-btn.state-done:hover{opacity:.88}
+
+/* ── ROUND DONE BANNER ── */
+.round-done-banner{display:none;align-items:center;gap:10px;margin:0 16px 0;background:linear-gradient(135deg,#1a1a1a 0%,#2d1a00 100%);border:1.5px solid var(--accent);border-radius:10px;padding:12px 14px;}
+.round-done-banner.show{display:flex}
+.rdb-ico{font-size:1.3rem;flex-shrink:0}
+.rdb-text{flex:1}
+.rdb-title{font-family:"Syne",sans-serif;font-size:.82rem;font-weight:800;color:#fff;line-height:1.2}
+.rdb-sub{font-size:.68rem;color:rgba(255,255,255,.55);margin-top:2px}
+
+/* ── HOW TO PLAY ── */
+.how-section{background:var(--bg);padding:28px 18px 44px}
+.how-title{font-family:"Syne",sans-serif;font-size:1.3rem;font-weight:800;text-align:center;color:var(--text);margin-bottom:28px;letter-spacing:-.3px}
+.how-step{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:28px}
+.how-step:last-child{margin-bottom:0}
+.how-num{width:42px;height:42px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:"Syne",sans-serif;font-size:1.1rem;font-weight:800;color:#fff;margin-bottom:12px;box-shadow:0 4px 16px rgba(217,78,24,.25)}
+.how-step-title{font-family:"Syne",sans-serif;font-size:.95rem;font-weight:800;color:var(--text);margin-bottom:6px}
+.how-step-desc{font-size:.82rem;color:var(--text2);line-height:1.6;max-width:300px}
+
+.predict-panel{display:none}
+.predict-panel.active{display:block}
+
+/* ── RESULTS TAB ── */
+.results-wrap{padding:16px}
+.results-round-label{font-family:"Syne",sans-serif;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.results-round-label::after{content:"";flex:1;height:1px;background:var(--border)}
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px}
+.result-card-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;gap:8px}
+.result-team{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+.result-team-name{font-family:"Syne",sans-serif;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text);text-align:center;line-height:1.2}
+.result-score-block{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.result-score{font-family:"Syne",sans-serif;font-size:1.6rem;font-weight:800;color:var(--text);line-height:1;min-width:24px;text-align:center}
+.result-dash{font-family:"Syne",sans-serif;font-size:.8rem;font-weight:800;color:var(--text3)}
+.result-badge{display:inline-block;padding:3px 9px;border-radius:100px;font-size:.58rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+.badge-home{background:#dbeafe;color:#1d4ed8}
+.badge-draw{background:#fef9c3;color:#854d0e}
+.badge-away{background:#dcfce7;color:#15803d}
+.badge-tbd{background:var(--surface2);color:var(--text3)}
+.results-empty{text-align:center;padding:60px 20px;color:var(--text2)}
+.results-empty .cs-ico{font-size:3rem;margin-bottom:12px;display:block}
+.results-empty .cs-title{font-family:"Syne",sans-serif;font-size:1rem;font-weight:800;color:var(--text);margin-bottom:6px}
+
+/* ── WINNERS TAB ── */
+.winners-wrap{padding:16px}
+.winners-round-label{font-family:"Syne",sans-serif;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.winners-round-label::after{content:"";flex:1;height:1px;background:var(--border)}
+.jackpot-banner{background:linear-gradient(135deg,#1a6e35 0%,#134f27 100%);border-radius:14px;padding:18px 18px 16px;margin-bottom:16px;text-align:center}
+.jackpot-amt{font-family:"Syne",sans-serif;font-size:2rem;font-weight:800;color:#fff;line-height:1}
+.jackpot-label{font-size:.72rem;color:rgba(255,255,255,.7);margin-top:4px}
+.winner-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;display:flex;align-items:center;gap:12px;padding:13px 14px;margin-bottom:8px}
+.winner-rank{font-family:"Syne",sans-serif;font-size:.65rem;font-weight:800;color:var(--text3);width:22px;text-align:center;flex-shrink:0}
+.winner-av{width:34px;height:34px;background:var(--accent);border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-family:"Syne",sans-serif;font-size:.85rem;font-weight:800;flex-shrink:0}
+.winner-av.gold{background:linear-gradient(135deg,#c9922a,#f0c040)}
+.winner-info{flex:1;min-width:0}
+.winner-name{font-family:"Syne",sans-serif;font-size:.85rem;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.winner-phone{font-size:.68rem;color:var(--text2);margin-top:1px}
+.winner-prize{font-family:"Syne",sans-serif;font-size:.8rem;font-weight:800;color:var(--green);flex-shrink:0}
+.winners-empty{text-align:center;padding:60px 20px;color:var(--text2)}
+.winners-empty .cs-ico{font-size:3rem;margin-bottom:12px;display:block}
+.winners-empty .cs-title{font-family:"Syne",sans-serif;font-size:1rem;font-weight:800;color:var(--text);margin-bottom:6px}
+
+footer{border-top:1px solid var(--border);padding:16px 18px;font-size:.69rem;color:var(--text3);text-align:center}
+</style>
+</head>
+<body>
+
+<div class="menu-overlay" id="menu-overlay" onclick="closeMenu()"></div>
+<div class="side-menu" id="side-menu">
+  <div class="menu-top">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="menu-av" id="menu-av">?</div>
+      <div><div class="menu-name" id="menu-name">...</div><div class="menu-phone" id="menu-phone">...</div></div>
+    </div>
+    <button class="menu-close" onclick="closeMenu()">&#x2715;</button>
+  </div>
+  <div class="menu-items">
+    <button class="menu-item" onclick="toggleDark();closeMenu()"><span class="mi" id="dm-icon">&#x1F319;</span>Dark / Light Mode</button>
+    <button class="menu-item" onclick="window.location.href='main.html'"><span class="mi">&#x1F3E0;</span>Back to Home</button>
+    <button class="menu-item" onclick="openWithdraw();closeMenu()"><span class="mi">&#x1F4B8;</span>Withdraw</button>
+    <div class="menu-divider"></div>
+    <button class="menu-item danger" onclick="doLogout()"><span class="mi">&#x1F6AA;</span>Log Out</button>
+  </div>
+  <div class="menu-bottom"><div class="menu-ver">WinZed &middot; Kabwe, Zambia &#x1F1FF;&#x1F1F2; &middot; 2026</div></div>
+</div>
+
+<nav>
+  <div class="logo">&#x1F1FF;&#x1F1F2; Win<span>Zed</span></div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="token-pill">
+      <span class="tp-amt" id="nav-token-amt">K0.00</span>
+      <button class="tp-add" onclick="openDeposit()">+</button>
+    </div>
+    <button class="hamburger" onclick="openMenu()">
+      <div class="hbar"></div><div class="hbar"></div><div class="hbar"></div>
+    </button>
+  </div>
+</nav>
+
+<div class="deposit-modal" id="deposit-modal">
+  <div class="deposit-sheet">
+    <h3>&#x1F4B0; Add Tokens</h3>
+    <p>Enter the amount you want to deposit. After confirming, you'll be taken to dial <strong>*115#</strong> to complete the payment.</p>
+    <div class="deposit-input-wrap"><div class="dep-pfx">K</div><input type="number" id="dep-amount" placeholder="e.g. 50" min="1"/></div>
+    <div id="dep-err" class="err"></div>
+    <button class="btn-deposit" onclick="handleDeposit()">Confirm &amp; Dial *115# &rarr;</button>
+    <button class="btn-dep-cancel" onclick="closeDeposit()">Cancel</button>
+  </div>
+</div>
+
+<div class="wd-success" id="wd-success">
+  <div class="wd-success-card">
+    <span class="wd-s-ico">&#x1F389;</span>
+    <div class="wd-s-amount" id="wd-s-amount">K0.00</div>
+    <div class="wd-s-title">Withdrawal Submitted!</div>
+    <div class="wd-s-msg">Your withdrawal has been received. Please wait <strong>1&ndash;2 minutes</strong> for the money to reflect. It's on its way! &#x1F680;</div>
+    <button class="wd-s-close" onclick="document.getElementById('wd-success').classList.remove('show')">Got it &#x1F44D;</button>
+  </div>
+</div>
+
+<div class="withdraw-modal" id="withdraw-modal">
+  <div class="withdraw-sheet">
+    <h3>&#x1F4B8; Withdraw</h3>
+    <p>Enter your withdrawal amount. Withdrawals take 1&ndash;2 minutes to process to your Airtel Money.</p>
+    <div class="deposit-input-wrap"><div class="dep-pfx">K</div><input type="number" id="wd-amount" placeholder="e.g. 20" min="1"/></div>
+    <div id="wd-err" class="err"></div>
+    <button class="btn-withdraw" onclick="handleWithdraw()">Withdraw Now</button>
+    <button class="btn-wd-cancel" onclick="closeWithdraw()">Cancel</button>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <a class="tab-item" href="main.html"><span class="tab-ico">&#x1F3E0;</span>Home</a>
+  <a class="tab-item active" href="predict.html"><span class="tab-ico">&#x26BD;</span>Predict</a>
+  <a class="tab-item" href="wheel.html"><span class="tab-ico">&#x1F3A1;</span>Wheel</a>
+  <a class="tab-item" href="megga.html"><span class="tab-ico">&#x1F3B0;</span>Megga</a>
+</div>
+
+<div class="predict-tabs">
+  <button class="ptab active" onclick="showPanel('home',this)">Home</button>
+  <button class="ptab" onclick="showPanel('results',this)">Results</button>
+  <button class="ptab" onclick="showPanel('winners',this)">Winners</button>
+  <button class="ptab" onclick="showPanel('rules',this)">Rules</button>
+</div>
+
+<!-- PROMO BANNER -->
+<div style="width:100%;overflow:hidden;line-height:0">
+  <img src="predict6-banner.png" alt="Predict 6 — Win K60,000" style="width:100%;display:block;object-fit:cover"/>
+</div>
+
+<!-- HOME PANEL -->
+<div class="predict-panel active" id="panel-home">
+  <div class="round-section">
+    <div class="round-header-row">
+      <div class="round-left">
+        <div class="rn-round" id="rb-round">Round 1</div>
+        <div class="rn-datetime">
+          <span class="rn-status-dot" id="rb-dot"></span>
+          <span id="rb-datetime">Starting 4:30pm Tuesday 30/1</span>
+        </div>
+      </div>
+      <div class="countdown-boxes" id="countdown-boxes">
+        <div class="cd-box"><div class="cd-num" id="cd-days">00</div><div class="cd-label">Days</div></div>
+        <div class="cd-box"><div class="cd-num" id="cd-hours">00</div><div class="cd-label">Hours</div></div>
+        <div class="cd-box"><div class="cd-num" id="cd-mins">00</div><div class="cd-label">Min.</div></div>
+        <div class="cd-box"><div class="cd-num" id="cd-secs">00</div><div class="cd-label">Sec.</div></div>
+      </div>
+    </div>
+    <div class="section-line"></div>
+  </div>
+
+  <!-- ROUND DONE BANNER -->
+  <div class="round-done-banner" id="round-done-banner">
+    <span class="rdb-ico">&#x1F3C1;</span>
+    <div class="rdb-text">
+      <div class="rdb-title" id="rdb-title">Round 1 is Done!</div>
+      <div class="rdb-sub">Predictions are closed &mdash; tap below to see your results</div>
+    </div>
+  </div>
+
+  <div class="matches-section" id="matches-list"></div>
+
+  <a id="predict-action-btn" href="predict-entry.html" class="predict-btn state-predict">Predict the Scores &rarr;</a>
+
+  <div class="how-section">
+    <div class="how-title">HOW TO PLAY?</div>
+    <div class="how-step"><div class="how-num">1</div><div class="how-step-title">Top Up Your Tokens</div><div class="how-step-desc">Add tokens to your WinZed wallet using Airtel Money. K5 tokens = 1 prediction entry.</div></div>
+    <div class="how-step"><div class="how-num">2</div><div class="how-step-title">Predict the Scores</div><div class="how-step-desc">Pick the correct result for all 6 matches from our weekly selection of top football games.</div></div>
+    <div class="how-step"><div class="how-num">3</div><div class="how-step-title">Get All 6 Right, Win Big</div><div class="how-step-desc">Get every score exactly right and you could win the K60,000 jackpot. All 6 or nothing &mdash; no consolation prizes!</div></div>
+  </div>
+</div>
+
+<!-- RESULTS PANEL -->
+<div class="predict-panel" id="panel-results">
+  <div class="results-wrap" id="results-content">
+    <div class="results-empty">
+      <span class="cs-ico">&#x1F4CA;</span>
+      <div class="cs-title">No Results Yet</div>
+      <div>Match results will appear here once the admin publishes scores.</div>
+    </div>
+  </div>
+</div>
+
+<!-- WINNERS PANEL -->
+<div class="predict-panel" id="panel-winners">
+  <div class="winners-wrap" id="winners-content">
+    <div class="winners-empty">
+      <span class="cs-ico">&#x1F3C6;</span>
+      <div class="cs-title">No Winners Yet</div>
+      <div>Winners will be announced here after each round.</div>
+    </div>
+  </div>
+</div>
+
+<!-- RULES PANEL -->
+<div class="predict-panel" id="panel-rules">
+  <div class="how-section" style="padding-top:24px">
+    <div class="how-title" style="font-size:1.1rem">Rules &amp; How It Works</div>
+    <div class="how-step"><div class="how-num" style="background:var(--text)">1</div><div class="how-step-title">Pay K5 to Enter</div><div class="how-step-desc">Each prediction entry costs K5 tokens. Maximum 5,000 entries per round.</div></div>
+    <div class="how-step"><div class="how-num" style="background:var(--text)">2</div><div class="how-step-title">Predict All 6 Matches</div><div class="how-step-desc">Predict the correct result for all 6 matches.</div></div>
+    <div class="how-step"><div class="how-num" style="background:var(--text)">3</div><div class="how-step-title">All 6 or Nothing</div><div class="how-step-desc">No consolation prizes. Get all 6 correct to win K60,000. Jackpot rolls over if nobody wins.</div></div>
+    <div class="how-step"><div class="how-num" style="background:var(--text)">4</div><div class="how-step-title">Prize Paid at Max Entries</div><div class="how-step-desc">K60,000 jackpot only paid once the round reaches 5,000 entries.</div></div>
+  </div>
+</div>
+
+<footer>
+  <div style="max-width:580px;margin:0 auto;display:flex;flex-direction:column;gap:8px">
+    <div>&copy; 2026 WinZed &middot; Kabwe, Zambia &#x1F1FF;&#x1F1F2; &middot; Real prizes &middot; Verified entries only</div>
+    <a href="legal.html" style="color:var(--text2);text-decoration:none;font-weight:700;border-top:1px solid var(--border);padding-top:10px;margin-top:4px">&#x2696;&#xFE0F; Legal &amp; Disclaimer &rarr;</a>
+  </div>
+</footer>
+
+<script>
+firebase.initializeApp({apiKey:"AIzaSyA-vSOEKp4v6aPud9enjiA-AzuQVl53Wto",authDomain:"winzed-413be.firebaseapp.com",projectId:"winzed-413be",storageBucket:"winzed-413be.firebasestorage.app",messagingSenderId:"1092518915452",appId:"1:1092518915452:web:016a41f0d250afe7d288f9"});
+var auth=firebase.auth(),db=firebase.firestore();
+var currentUser=null,userProfile=null;
+var countdownTarget=null,countdownInterval=null;
+var activeRoundId=null;
+
+(function(){var t=localStorage.getItem("wz-theme");if(t)document.documentElement.setAttribute("data-theme",t);})();
+function toggleDark(){var h=document.documentElement,dark=h.getAttribute("data-theme")==="dark";h.setAttribute("data-theme",dark?"light":"dark");localStorage.setItem("wz-theme",dark?"light":"dark");document.getElementById("dm-icon").textContent=dark?"\uD83C\uDF19":"\u2600\uFE0F";}
+function openMenu(){document.getElementById("side-menu").classList.add("open");document.getElementById("menu-overlay").classList.add("open");}
+function closeMenu(){document.getElementById("side-menu").classList.remove("open");document.getElementById("menu-overlay").classList.remove("open");}
+function openDeposit(){document.getElementById("deposit-modal").classList.add("show");}
+function closeDeposit(){document.getElementById("deposit-modal").classList.remove("show");}
+function openWithdraw(){document.getElementById("withdraw-modal").classList.add("show");}
+function closeWithdraw(){document.getElementById("withdraw-modal").classList.remove("show");}
+function doLogout(){auth.signOut().then(function(){window.location.href="index.html";});}
+function updateNavTokens(a){var el=document.getElementById("nav-token-amt");if(el)el.textContent="K"+(parseFloat(a)||0).toFixed(2);}
+
+function showPanel(name,btn){
+  document.querySelectorAll(".predict-panel").forEach(function(p){p.classList.remove("active");});
+  document.querySelectorAll(".ptab").forEach(function(t){t.classList.remove("active");});
+  document.getElementById("panel-"+name).classList.add("active");
+  if(btn)btn.classList.add("active");
+}
+
+function pad(n){return String(n).padStart(2,"0");}
+function startCountdown(isoString){
+  if(countdownInterval)clearInterval(countdownInterval);
+  countdownTarget=new Date(isoString).getTime();
+  function tick(){
+    var now=Date.now(),diff=countdownTarget-now;
+    if(diff<=0){["cd-days","cd-hours","cd-mins","cd-secs"].forEach(function(id){document.getElementById(id).textContent="00";});clearInterval(countdownInterval);return;}
+    var d=Math.floor(diff/86400000);diff-=d*86400000;
+    var h=Math.floor(diff/3600000);diff-=h*3600000;
+    var m=Math.floor(diff/60000);diff-=m*60000;
+    var s=Math.floor(diff/1000);
+    document.getElementById("cd-days").textContent=pad(d);
+    document.getElementById("cd-hours").textContent=pad(h);
+    document.getElementById("cd-mins").textContent=pad(m);
+    document.getElementById("cd-secs").textContent=pad(s);
+  }
+  tick();countdownInterval=setInterval(tick,1000);
+}
+
+var SHORT={"Wolverhampton":"Wolves","Wolverhampton Wanderers":"Wolves","Manchester United":"Man Utd","Manchester City":"Man City","Tottenham Hotspur":"Spurs","Newcastle United":"Newcastle","West Ham United":"West Ham"};
+function sn(n){return SHORT[n]||n;}
+
+var JP='M30,10 Q50,22 70,10 L95,30 L85,45 L75,40 L75,80 L25,80 L25,40 L15,45 L5,30 Z';
+var KIT={
+  "Arsenal":{type:"vstripe",c1:"#EF0107",c2:"#FFFFFF"},
+  "Man United":{type:"solid",c:"#DA291C"},
+  "Wolves":{type:"solid",c:"#FDB913"},"Wolverhampton":{type:"solid",c:"#FDB913"},
+  "Chelsea":{type:"solid",c:"#034694"},"Liverpool":{type:"solid",c:"#C8102E"},
+  "Manchester City":{type:"solid",c:"#6CABDD"},"Man City":{type:"solid",c:"#6CABDD"},
+  "Tottenham":{type:"solid",c:"#FFFFFF",stroke:true},"Spurs":{type:"solid",c:"#FFFFFF",stroke:true},
+  "Aston Villa":{type:"vstripe",c1:"#95BFE5",c2:"#670E36"},
+  "Newcastle":{type:"hstripes",c1:"#000000",c2:"#FFFFFF"},
+  "Brighton":{type:"hstripes",c1:"#0057B8",c2:"#FFFFFF"},
+  "West Ham":{type:"vstripe",c1:"#7A263A",c2:"#2DAFE5"},
+  "Leicester":{type:"solid",c:"#003090"},"Fulham":{type:"solid",c:"#FFFFFF",stroke:true},
+  "Crystal Palace":{type:"hstripes",c1:"#1B458F",c2:"#C4122E"},
+  "Bournemouth":{type:"hstripes",c1:"#DA291C",c2:"#000000"},
+  "Brentford":{type:"hstripes",c1:"#E30613",c2:"#FFFFFF"},
+  "Nottingham Forest":{type:"solid",c:"#DD0000"},"Ipswich":{type:"solid",c:"#005DAA"},
+  "Southampton":{type:"hstripes",c1:"#D71920",c2:"#FFFFFF"},
+  "Leeds":{type:"solid",c:"#FFFFFF",stroke:true},
+  "Sheffield United":{type:"hstripes",c1:"#EE2737",c2:"#FFFFFF"},
+  "Real Madrid":{type:"solid",c:"#FFFFFF",stroke:true},
+  "Barcelona":{type:"hstripes",c1:"#004D98",c2:"#A50044"},
+  "Atletico Madrid":{type:"hstripes",c1:"#CF321F",c2:"#FFFFFF"},
+  "Bayern Munich":{type:"solid",c:"#DC052D"},
+  "Dortmund":{type:"solid",c:"#FDE100"},"BVB":{type:"solid",c:"#FDE100"},
+  "Juventus":{type:"hstripes",c1:"#000000",c2:"#FFFFFF"},
+  "AC Milan":{type:"hstripes",c1:"#FB090B",c2:"#000000"},
+  "Inter Milan":{type:"hstripes",c1:"#0066B2",c2:"#000000"},
+  "PSG":{type:"solid",c:"#004170"},
+  "Ajax":{type:"vstripe",c1:"#FFFFFF",c2:"#D2122E"},
+  "Napoli":{type:"solid",c:"#71D0FA"},"Roma":{type:"solid",c:"#8E1F2F"},
+  "Benfica":{type:"solid",c:"#ED1C24"},
+  "Porto":{type:"hstripes",c1:"#005CA9",c2:"#FFFFFF"},
+  "Celtic":{type:"hstripes",c1:"#008853",c2:"#FFFFFF"},"Rangers":{type:"solid",c:"#1B458F"},
+  "Brazil":{type:"solid",c:"#FEDD00"},
+  "Argentina":{type:"hstripes",c1:"#75AADB",c2:"#FFFFFF"},
+  "France":{type:"solid",c:"#002395"},"Germany":{type:"solid",c:"#FFFFFF",stroke:true},
+  "Italy":{type:"solid",c:"#004FB0"},"Spain":{type:"solid",c:"#F00000"},
+  "England":{type:"solid",c:"#FFFFFF",stroke:true},
+  "default":{type:"solid",c:"#888888"}
+};
+
+function getKit(name){
+  for(var k in KIT){if(k!=="default"&&name.toLowerCase().indexOf(k.toLowerCase())>=0)return KIT[k];}
+  return KIT["default"];
+}
+
+function jerseyHTML(name){
+  var kit=getKit(name);
+  var uid='j'+Math.random().toString(36).slice(2,7);
+  var fillDef='',fillRef='',extraLayers='';
+  var volGrad='<defs><radialGradient id="vol'+uid+'" cx="50%" cy="35%" r="60%">'
+    +'<stop offset="0%" stop-color="white" stop-opacity="0.28"/>'
+    +'<stop offset="100%" stop-color="black" stop-opacity="0.18"/>'
+    +'</radialGradient></defs>';
+  if(kit.type==="solid"){
+    fillRef=kit.c;
+  } else if(kit.type==="stripes"||kit.type==="hstripes"){
+    fillDef='<defs><pattern id="'+uid+'" width="16" height="100" patternUnits="userSpaceOnUse">'
+      +'<rect width="8" height="100" fill="'+kit.c1+'"/>'
+      +'<rect x="8" width="8" height="100" fill="'+kit.c2+'"/>'
+      +'</pattern></defs>';
+    fillRef='url(#'+uid+')';
+  } else if(kit.type==="vstripe"){
+    fillRef=kit.c1;
+    fillDef='<defs><clipPath id="cl'+uid+'"><path d="'+JP+'"/></clipPath></defs>';
+    extraLayers='<rect x="0" y="0" width="25" height="100" fill="'+kit.c2+'" clip-path="url(#cl'+uid+')"/>'
+               +'<rect x="75" y="0" width="25" height="100" fill="'+kit.c2+'" clip-path="url(#cl'+uid+')"/>';
+  }
+  return '<svg viewBox="0 0 100 85">'
+    +volGrad+fillDef
+    +'<path d="'+JP+'" fill="'+fillRef+'"'+(kit.stroke?' stroke="#ccc" stroke-width="1"':'')+'/>'
+    +extraLayers
+    +'<path d="'+JP+'" fill="url(#vol'+uid+')"/>'
+    +'</svg>';
+}
+
+function renderMatches(matches){
+  if(!matches||!matches.length)return;
+  var list=document.getElementById("matches-list");
+  list.innerHTML="";
+  matches.forEach(function(m){
+    var row=document.createElement("div");
+    row.className="match-row";
+    row.innerHTML=
+      '<div class="team-cell"><span class="team-name">'+sn(m.home||"TBA")+'</span><div class="jersey">'+jerseyHTML(m.home||'')+'</div></div>'+
+      '<span class="match-vs">VS</span>'+
+      '<div class="team-cell"><span class="team-name">'+sn(m.away||"TBA")+'</span><div class="jersey">'+jerseyHTML(m.away||'')+'</div></div>';
+    list.appendChild(row);
+  });
+}
+
+// ── BUTTON STATE ──
+// isDone=true  → orange "View Final Scores" → goes to predict-entry.html (green/red results shown there)
+// hasEntry     → green outline "View My Predictions" → predict-entry.html
+// neither      → green solid "Predict the Scores" → predict-entry.html
+function setButtonState(hasEntry, isDone){
+  var btn=document.getElementById("predict-action-btn");
+  if(isDone){
+    btn.className="predict-btn state-done";
+    btn.textContent="View Final Scores \u2192";
+    btn.href="predict-entry.html";
+    btn.onclick=null;
+  } else if(hasEntry){
+    btn.className="predict-btn state-view";
+    btn.textContent="View My Predictions \u2192";
+    btn.href="predict-entry.html";
+    btn.onclick=null;
+  } else {
+    btn.className="predict-btn state-predict";
+    btn.textContent="Predict the Scores \u2192";
+    btn.href="predict-entry.html";
+    btn.onclick=null;
+  }
+}
+
+/* ── RESULTS RENDERER ── */
+function resultBadge(hs,as){
+  if(hs===null||hs===undefined||as===null||as===undefined)return'<span class="result-badge badge-tbd">TBD</span>';
+  if(hs>as)return'<span class="result-badge badge-home">Home Win</span>';
+  if(as>hs)return'<span class="result-badge badge-away">Away Win</span>';
+  return'<span class="result-badge badge-draw">Draw</span>';
+}
+
+function renderResults(round,results){
+  var wrap=document.getElementById("results-content");
+  var matches=round.matches||[];
+  if(!results||!results.scores||!results.scores.length){
+    wrap.innerHTML='<div class="results-empty"><span class="cs-ico">&#x23F3;</span><div class="cs-title">Results Pending</div><div>Scores will appear here after matches end.</div></div>';
+    return;
+  }
+  var scores=results.scores;
+  var html='<div class="results-round-label">'+round.name+'</div>';
+  matches.forEach(function(m,i){
+    var sc=scores[i]||{};
+    var hs=(sc.home!==undefined&&sc.home!=="")?(parseInt(sc.home)||0):null;
+    var as=(sc.away!==undefined&&sc.away!=="")?(parseInt(sc.away)||0):null;
+    var hasScore=hs!==null&&as!==null;
+    html+='<div class="result-card"><div class="result-card-inner">'+
+      '<div class="result-team">'+
+        '<div class="result-team-name">'+sn(m.home||"TBA")+'</div>'+
+        resultBadge(hs,as)+
+      '</div>'+
+      '<div class="result-score-block">'+
+        '<span class="result-score">'+(hasScore?hs:"—")+'</span>'+
+        '<span class="result-dash">:</span>'+
+        '<span class="result-score">'+(hasScore?as:"—")+'</span>'+
+      '</div>'+
+      '<div class="result-team" style="align-items:flex-end">'+
+        '<div class="result-team-name">'+sn(m.away||"TBA")+'</div>'+
+      '</div>'+
+    '</div></div>';
+  });
+  wrap.innerHTML=html;
+}
+
+/* ── WINNERS RENDERER ── */
+function renderWinners(round,winnersSnap){
+  var wrap=document.getElementById("winners-content");
+  if(winnersSnap.empty){
+    wrap.innerHTML='<div class="winners-empty"><span class="cs-ico">&#x1F3C6;</span><div class="cs-title">No Winners Yet</div><div>Winners will be announced here after each round.</div></div>';
+    return;
+  }
+  var html='<div class="jackpot-banner"><div class="jackpot-amt">K60,000</div><div class="jackpot-label">Round Jackpot</div></div>';
+  html+='<div class="winners-round-label">'+round.name+' Winners</div>';
+  var rank=1;
+  winnersSnap.forEach(function(doc){
+    var w=doc.data();
+    var initial=(w.name||"?").charAt(0).toUpperCase();
+    var isTop=rank===1;
+    html+='<div class="winner-card">'+
+      '<div class="winner-rank">#'+rank+'</div>'+
+      '<div class="winner-av'+(isTop?' gold':'')+'">'+initial+'</div>'+
+      '<div class="winner-info">'+
+        '<div class="winner-name">'+(w.name||"Winner")+'</div>'+
+        '<div class="winner-phone">'+(w.phone||"")+'</div>'+
+      '</div>'+
+      '<div class="winner-prize">K'+(w.prize||"60,000")+'</div>'+
+    '</div>';
+    rank++;
+  });
+  wrap.innerHTML=html;
+}
+
+auth.onAuthStateChanged(function(user){
+  if(!user){window.location.href="index.html";return;}
+  currentUser=user;loadUser();
+});
+
+function loadUser(){
+  db.collection("users").doc(currentUser.uid).get().then(function(snap){
+    if(!snap.exists){window.location.href="index.html";return;}
+    userProfile=snap.data();
+    document.getElementById("menu-av").textContent=userProfile.name.charAt(0).toUpperCase();
+    document.getElementById("menu-name").textContent=userProfile.name;
+    document.getElementById("menu-phone").textContent=userProfile.phone;
+    updateNavTokens(userProfile.tokens||0);
+    loadRound();
+  });
+}
+
+function loadRound(){
+  db.collection("predict-rounds").where("active","==",true).limit(1).onSnapshot(function(snap){
+    if(snap.empty){
+      document.getElementById("rb-round").textContent="No Active Round";
+      document.getElementById("rb-datetime").textContent="Check back soon";
+      document.getElementById("rb-dot").style.background="#888";
+      setButtonState(false,false);
+      return;
+    }
+    snap.forEach(function(doc){
+      var d=doc.data();
+      activeRoundId=doc.id;
+      renderMatches(d.matches);
+      document.getElementById("rb-round").textContent=d.name||"Round 1";
+      var dtText="";
+      if(d.startDateLabel){dtText=d.startDateLabel;}
+      else if(d.startISO){var dt=new Date(d.startISO);dtText="Starting "+dt.toLocaleString("en-ZM",{weekday:"long",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});}
+      document.getElementById("rb-datetime").textContent=dtText||"Open for Entries";
+      document.getElementById("rb-dot").style.background=d.open?"#1a6e35":"#d94e18";
+      var isDone=d.done===true;
+      var banner=document.getElementById("round-done-banner");
+      if(isDone){
+        banner.classList.add("show");
+        document.getElementById("rdb-title").textContent=(d.name||"Round")+" is Done!";
+        document.getElementById("countdown-boxes").style.display="none";
+        document.getElementById("rb-dot").style.background="#d94e18";
+      } else {
+        banner.classList.remove("show");
+        if(d.startISO){startCountdown(d.startISO);}
+        else{document.getElementById("countdown-boxes").style.display="none";}
+      }
+      db.collection("predict-entries").where("uid","==",currentUser.uid).where("roundId","==",doc.id).limit(1).get()
+        .then(function(eSnap){setButtonState(!eSnap.empty,isDone);});
+      db.collection("predict-results").doc(doc.id).onSnapshot(function(rSnap){
+        renderResults(d,rSnap.exists?rSnap.data():null);
+      });
+      db.collection("predict-winners").where("roundId","==",doc.id).orderBy("addedAt","asc").onSnapshot(function(wSnap){
+        renderWinners(d,wSnap);
+      });
+    });
+  });
+}
+
+function handleDeposit(){
+  var amt=parseFloat(document.getElementById("dep-amount").value),err=document.getElementById("dep-err");
+  if(!amt||amt<1){err.textContent="Enter a valid amount.";err.style.display="block";return;}
+  db.collection("notifications").add({type:"deposit",uid:currentUser.uid,name:userProfile.name,phone:userProfile.phone,amount:amt,status:"pending",requestedAt:new Date().toISOString(),seen:false})
+    .then(function(){closeDeposit();window.location.href="tel:*115%23";})
+    .catch(function(e){err.textContent="Failed: "+e.message;err.style.display="block";});
+}
+function handleWithdraw(){
+  var amt=parseFloat(document.getElementById("wd-amount").value),tokens=userProfile?userProfile.tokens||0:0,err=document.getElementById("wd-err");
+  if(!amt||amt<1){err.textContent="Enter a valid amount.";err.style.display="block";return;}
+  if(amt>tokens){err.textContent="You only have K"+tokens.toFixed(2)+" in tokens.";err.style.display="block";return;}
+  var nt=tokens-amt;
+  db.collection("users").doc(currentUser.uid).update({tokens:nt})
+    .then(function(){return db.collection("notifications").add({type:"withdrawal",uid:currentUser.uid,name:userProfile.name,phone:userProfile.phone,amount:amt,status:"pending",requestedAt:new Date().toISOString(),seen:false});})
+    .then(function(){userProfile.tokens=nt;updateNavTokens(nt);closeWithdraw();document.getElementById("wd-s-amount").textContent="K"+amt.toFixed(2);document.getElementById("wd-success").classList.add("show");})
+    .catch(function(e){err.textContent="Failed: "+e.message;err.style.display="block";});
+}
+document.getElementById("deposit-modal").addEventListener("click",function(e){if(e.target===this)closeDeposit();});
+document.getElementById("withdraw-modal").addEventListener("click",function(e){if(e.target===this)closeWithdraw();});
+</script>
+</body>
+</html>
