@@ -25,17 +25,11 @@
   --box-bg:#1a1820;--box-open-bg:#1e1835;--box-match-shadow:rgba(167,139,250,0.18);
   --box-break-bg:#1a0a0a;--box-break-border:#7f1d1d;
 }
+  
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-font-smoothing:antialiased}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background .25s,color .25s}
 #page{display:none}
-
-#ov{display:flex;position:fixed;inset:0;background:var(--bg);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .4s}
-#ov.gone{opacity:0;pointer-events:none}
-.spin{width:34px;height:34px;border:2.5px solid var(--border);border-top-color:var(--megga);border-radius:50%;animation:sp .7s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
-.ov-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;letter-spacing:-.5px}
-.ov-logo em{font-style:normal;color:var(--megga)}
 
 /* MODAL OVERLAY */
 .modal-overlay{
@@ -278,9 +272,6 @@ footer{border-top:1px solid var(--border);padding:14px 16px;font-size:.69rem;col
 </head>
 <body>
 
-<div id="ov"><div class="ov-logo">Win<span style="color:var(--accent)">Zed</span> <em>Megga</em></div><div class="spin"></div></div>
-<div class="conf-root" id="conf-root"></div>
-
 <!-- ALL CHANCES USED MODAL -->
 <div class="modal-overlay" id="chances-modal">
   <div class="modal-box">
@@ -489,8 +480,7 @@ function loadUser(user){
       } else {
         restorePackState();
       }
-      document.getElementById('page').style.display='block';
-      document.getElementById('ov').classList.add('gone');
+    
     })
     .catch(function(err){
       console.error('loadUser error:',err);
