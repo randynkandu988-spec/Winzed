@@ -449,7 +449,13 @@ footer{border-top:1px solid var(--border);padding:16px 18px;display:flex;justify
 <div class="deposit-modal" id="deposit-modal">
   <div class="deposit-sheet">
     <h3>💰 Add Tokens</h3>
-    <p>Enter the amount you want to deposit. After confirming, you'll be taken to dial <strong>*115#</strong> to complete the payment. We'll credit your tokens once we verify.</p>
+    <p>Enter the amount you want to deposit. After confirming, dial <strong>*115#</strong> and send to:</p>
+    <div style="background:var(--warm-gray);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;text-align:center">
+      <div style="font-size:.7rem;color:var(--text2);margin-bottom:3px">Airtel Money Number</div>
+      <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:var(--accent)">+260 775 443 280</div>
+      <div style="font-size:.72rem;color:var(--text2);margin-top:2px">Elijah Changwe</div>
+    </div>
+    <p style="margin-top:-8px">We'll credit your tokens once we verify your payment. 🇿🇲</p>
     <div class="deposit-input-wrap">
       <div class="dep-pfx">K</div>
       <input type="number" id="dep-amount" placeholder="e.g. 50" min="1"/>
@@ -813,7 +819,7 @@ function handleDeposit(){
     phone:userProfile.phone,
     amount:amt,
     status:'pending',
-    createdAt:new Date().toISOString(),
+    requestedAt:new Date().toISOString(),
     seen:false
   }).then(function(){
     closeDeposit();
@@ -842,7 +848,7 @@ function handleWithdraw(){
         phone:userProfile.phone,
         amount:amt,
         status:'pending',
-        createdAt:new Date().toISOString(),
+        requestedAt:new Date().toISOString(),
         seen:false
       });
     })
