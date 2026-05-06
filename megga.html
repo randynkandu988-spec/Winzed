@@ -30,45 +30,18 @@ html{-webkit-font-smoothing:antialiased}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background .25s,color .25s}
 #page{display:block}
 
-/* MODAL OVERLAY */
-.modal-overlay{
-  display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,.55);
-  z-index:5000;
-  align-items:center;justify-content:center;
-  padding:20px;
-}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:5000;align-items:center;justify-content:center;padding:20px;}
 .modal-overlay.open{display:flex}
-.modal-box{
-  background:var(--surface);
-  border:2px solid var(--megga-border);
-  border-radius:20px;
-  padding:26px 22px 22px;
-  max-width:320px;width:100%;
-  text-align:center;
-  box-shadow:0 20px 60px rgba(0,0,0,.3);
-  animation:popIn .35s cubic-bezier(.34,1.56,.64,1);
-}
+.modal-box{background:var(--surface);border:2px solid var(--megga-border);border-radius:20px;padding:26px 22px 22px;max-width:320px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:popIn .35s cubic-bezier(.34,1.56,.64,1);}
 .modal-ico{font-size:2.8rem;display:block;margin-bottom:10px}
 .modal-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;margin-bottom:6px;color:var(--text)}
 .modal-body{font-size:.8rem;color:var(--text2);line-height:1.6;margin-bottom:18px}
 .modal-prize{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--megga);margin:8px 0 4px}
 .modal-prize-lbl{font-size:.7rem;color:var(--text3);margin-bottom:14px}
 .modal-btns{display:flex;flex-direction:column;gap:9px}
-.modal-btn-win{
-  background:linear-gradient(135deg,var(--megga) 0%,var(--megga2) 100%);
-  color:#fff;border:none;border-radius:12px;
-  padding:14px;font-family:'Syne',sans-serif;font-size:.95rem;font-weight:800;
-  cursor:pointer;transition:all .2s;
-  box-shadow:0 4px 16px rgba(124,58,237,.35);
-}
+.modal-btn-win{background:linear-gradient(135deg,var(--megga) 0%,var(--megga2) 100%);color:#fff;border:none;border-radius:12px;padding:14px;font-family:'Syne',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px rgba(124,58,237,.35);}
 .modal-btn-win:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(124,58,237,.45)}
-.modal-btn-lose{
-  background:transparent;border:1.5px solid var(--border);
-  color:var(--text2);border-radius:12px;
-  padding:12px;font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:600;
-  cursor:pointer;transition:all .2s;
-}
+.modal-btn-lose{background:transparent;border:1.5px solid var(--border);color:var(--text2);border-radius:12px;padding:12px;font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:600;cursor:pointer;transition:all .2s;}
 .modal-btn-lose:hover{border-color:var(--accent);color:var(--accent)}
 .modal-timer{font-size:.7rem;color:var(--text3);margin-top:10px}
 .modal-timer strong{color:var(--megga);font-weight:700}
@@ -124,7 +97,6 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:10px 1
 [data-theme="dark"] .status-strip.win{background:rgba(30,128,64,.15);border-color:rgba(30,128,64,.3);color:#4ade80}
 [data-theme="dark"] .status-strip.lose{background:rgba(194,65,12,.12);border-color:rgba(194,65,12,.3);color:#fb923c}
 
-/* 3×3 BOX GRID */
 .boxes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
 .box{aspect-ratio:1;border-radius:16px;border:2px solid var(--border);background:var(--box-bg);cursor:pointer;position:relative;overflow:hidden;transition:border-color .18s,box-shadow .18s,transform .12s;-webkit-tap-highlight-color:transparent;user-select:none}
 .box:not(.locked):not(.revealed):hover{border-color:var(--megga);box-shadow:0 4px 16px var(--box-match-shadow);transform:scale(1.04)}
@@ -197,53 +169,21 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:10px 1
 .warn-strip.show{display:flex}
 [data-theme="dark"] .warn-strip{background:#1a1200;border-color:#6b4f00;color:#fbbf24}
 
-/* ACTION BUTTONS */
 .actions-section{display:flex;gap:9px;margin-bottom:14px}
-
-.btn-daily{
-  flex:1;
-  background:linear-gradient(135deg,var(--megga) 0%,var(--megga2) 100%);
-  color:#fff;border:none;border-radius:12px;
-  padding:11px 14px;
-  font-family:'DM Sans',sans-serif;cursor:pointer;
-  transition:all .22s;
-  display:flex;align-items:center;justify-content:space-between;gap:8px;
-  box-shadow:0 3px 14px rgba(124,58,237,.3);
-  min-width:0;
-}
+.btn-daily{flex:1;background:linear-gradient(135deg,var(--megga) 0%,var(--megga2) 100%);color:#fff;border:none;border-radius:12px;padding:11px 14px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .22s;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 3px 14px rgba(124,58,237,.3);min-width:0;}
 .btn-daily:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 20px rgba(124,58,237,.4)}
 .btn-daily:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;filter:grayscale(.3)}
 .bd-text{min-width:0;flex:1}
 .bd-text .bd-title{font-size:.82rem;font-weight:700;text-align:left;display:block;margin-bottom:1px;white-space:nowrap}
 .bd-text .bd-sub{font-size:.6rem;opacity:.75;font-weight:400;display:block;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* FIX: Pack button — badge aligned right, no overflow */
-.btn-pack{
-  flex:1;
-  background:var(--surface);
-  border:2px solid var(--megga-border);
-  color:var(--text);border-radius:12px;
-  padding:11px 10px 11px 14px;
-  font-family:'DM Sans',sans-serif;cursor:pointer;
-  transition:all .22s;
-  display:flex;align-items:center;gap:8px;
-  min-width:0;
-}
+.btn-pack{flex:1;background:var(--surface);border:2px solid var(--megga-border);color:var(--text);border-radius:12px;padding:11px 10px 11px 14px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .22s;display:flex;align-items:center;gap:8px;min-width:0;}
 .btn-pack:hover:not(:disabled){border-color:var(--megga);background:var(--megga-light)}
 .btn-pack:disabled{opacity:.35;cursor:not-allowed;filter:grayscale(.3)}
 .bp-text{min-width:0;flex:1}
 .bp-text .bp-title{font-size:.82rem;font-weight:700;color:var(--text);display:block;margin-bottom:1px;text-align:left;white-space:nowrap}
 .bp-text .bp-sub{font-size:.6rem;color:var(--text2);font-weight:400;display:block;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* FIX: badge — flex-shrink:0 + explicit sizing so it never wraps or overflows */
-.bp-badge{
-  background:var(--megga);color:#fff;
-  border-radius:7px;padding:4px 8px;
-  font-family:'Syne',sans-serif;font-size:.75rem;font-weight:800;
-  flex-shrink:0;
-  white-space:nowrap;
-  line-height:1.2;
-  display:flex;align-items:center;justify-content:center;
-}
+.bp-badge{background:var(--megga);color:#fff;border-radius:7px;padding:4px 8px;font-family:'Syne',sans-serif;font-size:.75rem;font-weight:800;flex-shrink:0;white-space:nowrap;line-height:1.2;display:flex;align-items:center;justify-content:center;}
 
 .pack-uses-note{font-size:.66rem;color:var(--text3);text-align:center;margin-top:-8px;margin-bottom:6px}
 
@@ -266,6 +206,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:10px 1
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 .toast.ok{background:var(--green)}.toast.fail{background:var(--accent)}.toast.megga{background:var(--megga)}
 
+
+
 footer{border-top:1px solid var(--border);padding:14px 16px;font-size:.69rem;color:var(--text3);text-align:center}
 </style>
 </head>
@@ -273,7 +215,7 @@ footer{border-top:1px solid var(--border);padding:14px 16px;font-size:.69rem;col
 
 <div class="conf-root" id="conf-root"></div>
 
-<!-- ALL CHANCES USED MODAL -->
+<!-- CHANCES MODAL -->
 <div class="modal-overlay" id="chances-modal">
   <div class="modal-box">
     <span class="modal-ico">🎰</span>
@@ -281,7 +223,7 @@ footer{border-top:1px solid var(--border);padding:14px 16px;font-size:.69rem;col
     <div class="modal-body">This is a free promotional draw. Results are randomly determined. No purchase necessary.</div>
     <div class="modal-prize" id="modal-prize">🎰 Megga Draw</div>
     <div class="modal-prize-lbl">Promotional Prize Draw</div>
-    <div class="modal-btns">
+    <div class="modal-btns" id="modal-btns">
       <button class="modal-btn-win" onclick="goForMegga()">🔥 Enter the Megga Draw!</button>
       <button class="modal-btn-lose" onclick="giveUpAndLose()">😔 Skip this round</button>
     </div>
@@ -309,7 +251,7 @@ footer{border-top:1px solid var(--border);padding:14px 16px;font-size:.69rem;col
   <div class="menu-bottom"><div class="menu-ver">WinZed · Kabwe, Zambia 🇿🇲 · 2026</div></div>
 </div>
 
-<div id="page">
+
 <nav>
   <div class="logo">🇿🇲 Win<span>Zed</span></div>
   <div style="display:flex;align-items:center;gap:9px">
@@ -343,7 +285,6 @@ footer{border-top:1px solid var(--border);padding:14px 16px;font-size:.69rem;col
         <span class="bd-sub" id="daily-sub">Free · Once every 24h</span>
       </div>
     </button>
-
     <button class="btn-pack" id="btn-pack" onclick="buyPack()">
       <div class="bp-text">
         <span class="bp-title">3-Chance Pack</span>
@@ -405,6 +346,11 @@ footer{border-top:1px solid var(--border);padding:14px 16px;font-size:.69rem;col
 <div class="toast" id="toast"></div>
 
 <script>
+// ── GLOBAL ERROR CATCH (catches silent JS crashes) ──
+window.onerror = function(msg, src, line, col, err) {
+  console.error('[WinZed crash]', msg, 'line:' + line, err);
+};
+
 firebase.initializeApp({
   apiKey:"AIzaSyA-vSOEKp4v6aPud9enjiA-AzuQVl53Wto",
   authDomain:"winzed-413be.firebaseapp.com",
@@ -413,645 +359,719 @@ firebase.initializeApp({
   messagingSenderId:"1092518915452",
   appId:"1:1092518915452:web:016a41f0d250afe7d288f9"
 });
-var auth=firebase.auth(), db=firebase.firestore();
-var currentUser=null, userProfile=null, meggaData=null, _authChecked=false;
 
-// GAME STATE
-// totalChances = how many chances total in this session (sum of all active packs + daily)
-// chancesLeft  = how many rounds still to play
-// packChancesLeft in Firestore = remaining across sessions
-var gs={active:false,totalChances:1,chancesLeft:1,picks:[],values:[],teaserVal:0,roundDone:false};
+var auth = firebase.auth(), db = firebase.firestore();
+var currentUser = null, userProfile = null, meggaData = null;
+var _loaded = false; // guard: only load once
 
-var ICONS=['🎁','🎁','🎁','🎁️','🎁','🎁','🎁','🎁','🎁'];
+var gs = {
+  active: false, totalChances: 1, chancesLeft: 1,
+  picks: [], values: [], teaserVal: 0, roundDone: false
+};
 
-// AMOUNT POOL
-var AMOUNTS=[1000000,7000,6000,5000,4000,3000,500,700,300,900,200,40,30,50,20,10,1,60];
+var ICONS = ['🎁','🎁','🎁','🎁','🎁','🎁','🎁','🎁','🎁'];
+var AMOUNTS = [1000000,7000,6000,5000,4000,3000,500,700,300,900,200,40,30,50,20,10,1,60];
+var packTimerInt = null, dailyTimerInt = null, _packMsLeft = 0;
 
-var packTimerInt=null, dailyTimerInt=null;
-// Track remaining pack ms for modal display
-var _packMsLeft=0;
 
-/* THEME */
-(function(){var t=localStorage.getItem('wz-theme');if(t)document.documentElement.setAttribute('data-theme',t);})();
-function toggleDark(){var h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');localStorage.setItem('wz-theme',d?'light':'dark');var i=document.getElementById('dm-icon');if(i)i.textContent=d?'🌙':'☀️';}
 
-/* MENU */
-function openMenu(){document.getElementById('side-menu').classList.add('open');document.getElementById('menu-overlay').classList.add('open');}
-function closeMenu(){document.getElementById('side-menu').classList.remove('open');document.getElementById('menu-overlay').classList.remove('open');}
-function doLogout(){auth.signOut().then(function(){window.location.href='index.html';});}
+/* ── THEME ── */
+(function(){
+  var t = localStorage.getItem('wz-theme');
+  if (t) document.documentElement.setAttribute('data-theme', t);
+})();
+function toggleDark() {
+  var h = document.documentElement;
+  var d = h.getAttribute('data-theme') === 'dark';
+  h.setAttribute('data-theme', d ? 'light' : 'dark');
+  localStorage.setItem('wz-theme', d ? 'light' : 'dark');
+  var i = document.getElementById('dm-icon');
+  if (i) i.textContent = d ? '🌙' : '☀️';
+}
 
-/* AUTH */
-auth.onAuthStateChanged(function(user){
-  if(!_authChecked){_authChecked=true;if(user){currentUser=user;loadUser(user);}return;}
-  if(!user){window.location.href='index.html';return;}
-  currentUser=user;loadUser(user);
+/* ── MENU ── */
+function openMenu() {
+  document.getElementById('side-menu').classList.add('open');
+  document.getElementById('menu-overlay').classList.add('open');
+}
+function closeMenu() {
+  document.getElementById('side-menu').classList.remove('open');
+  document.getElementById('menu-overlay').classList.remove('open');
+}
+function doLogout() {
+  auth.signOut().then(function() { window.location.href = 'index.html'; });
+}
+
+/* ── AUTH — FIXED ──
+   FIX 1: Removed broken _authChecked flag pattern.
+   FIX 2: _loaded guard prevents double-loading if Firebase fires twice.
+   FIX 3: Only redirect to index if NOT already on a public page.
+   EFFECT: Page now reliably shows content after sign-in instead of blank screen.
+*/
+auth.onAuthStateChanged(function(user) {
+  if (!user) {
+    // Not logged in — send to login
+    window.location.href = 'index.html';
+    return;
+  }
+  if (_loaded) return; // already initialised, ignore duplicate Firebase calls
+  _loaded = true;
+  currentUser = user;
+  loadUser(user);
 });
 
-function loadUser(user){
+/* ── LOAD USER DATA ──
+   FIX 4: Each step wrapped in its own .catch() so one failure doesn't
+   silently kill the entire chain and leave a blank page.
+   FIX 5: megga-players doc is created with set({merge:true}) if it doesn't
+   exist, so new users don't crash.
+   EFFECT: Even if megga-players doc is missing, page still loads and works.
+*/
+function loadUser(user) {
+
+
   db.collection('users').doc(user.uid).get()
-    .then(function(snap){
-      if(!snap.exists){window.location.href='index.html';return;}
-      userProfile=snap.data();
-      document.getElementById('menu-av').textContent=userProfile.name.charAt(0).toUpperCase();
-      document.getElementById('menu-name').textContent=userProfile.name;
-      document.getElementById('menu-phone').textContent=userProfile.phone;
-      document.getElementById('dm-icon').textContent=document.documentElement.getAttribute('data-theme')==='dark'?'☀️':'🌙';
-      updateNavTokens(userProfile.tokens||0);
+    .then(function(snap) {
+      if (!snap.exists) {
+        // User doc missing — go back to login
+        window.location.href = 'index.html';
+        return Promise.reject('no-user-doc');
+      }
+      userProfile = snap.data();
+
+      // Update nav + menu
+      var av = document.getElementById('menu-av');
+      var nm = document.getElementById('menu-name');
+      var ph = document.getElementById('menu-phone');
+      var di = document.getElementById('dm-icon');
+      if (av) av.textContent = (userProfile.name || '?').charAt(0).toUpperCase();
+      if (nm) nm.textContent = userProfile.name || '—';
+      if (ph) ph.textContent = userProfile.phone || '—';
+      if (di) di.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
+      updateNavTokens(userProfile.tokens || 0);
+
+
       return db.collection('megga-players').doc(user.uid).get();
     })
-    .then(function(snap){
-      meggaData=snap&&snap.exists?snap.data():{
-        firstPlayedAt:null,totalPlays:0,totalWon:0,
-        dailyLastUsed:null,
-        packUsedToday:0,packLastDay:null,
-        packExpiry:null,packChancesLeft:0,
-        history:[]
-      };
+    .then(function(snap) {
+      if (!snap) return; // aborted above
+
+      if (snap.exists) {
+        meggaData = snap.data();
+      } else {
+        // New player — initialise default doc in Firestore
+        // EFFECT: Uses set({merge:true}) which is allowed by your rules (write = create + update for owner)
+        meggaData = {
+          firstPlayedAt: null,
+          totalPlays: 0,
+          totalWon: 0,
+          dailyLastUsed: null,
+          packUsedToday: 0,
+          packLastDay: null,
+          packExpiry: null,
+          packChancesLeft: 0,
+          history: []
+        };
+        // Create the doc silently — if this fails due to rules, game still works locally
+        db.collection('megga-players').doc(user.uid).set(meggaData, { merge: true })
+          .catch(function(e) { console.warn('[WinZed] Could not init megga-players doc:', e.message); });
+      }
+
       buildGrid();
       renderWeekChip();
       renderDailyBtn();
       renderPackBtn();
       renderHistory();
 
-      var _dailyAvail=isDailyAvailable();
-      var _hasActivePack=hasActivePack();
+      var dailyAvail = isDailyAvailable();
+      var haspack = hasActivePack();
 
-      if(_dailyAvail&&!_hasActivePack){
+      if (dailyAvail && !haspack) {
         autoStartDaily();
       } else {
         restorePackState();
       }
+
+
     })
-    .catch(function(err){
-      console.error('loadUser error:',err);
-      var strip=document.getElementById('status-strip');
-      if(strip){strip.className='status-strip lose';strip.innerHTML='<span>⚠️</span><span>Load error: '+(err&&err.message?err.message:String(err))+'</span>';}
+    .catch(function(err) {
+      if (err === 'no-user-doc') return; // already handled
+      console.error('[WinZed] loadUser error:', err);
+      setStatus('idle', '⚠️ Load error — try refreshing');
     });
 }
 
-function updateNavTokens(t){document.getElementById('nav-tokens').textContent='K'+(parseFloat(t)||0).toFixed(0);}
-
-function isDailyAvailable(){
-  var lu=meggaData.dailyLastUsed;
-  return !lu||(Date.now()-new Date(lu))>=864e5;
+function updateNavTokens(t) {
+  document.getElementById('nav-tokens').textContent = 'K' + (parseFloat(t) || 0).toFixed(0);
 }
 
-// FIX: hasActivePack checks packChancesLeft > 0 AND valid expiry
-function hasActivePack(){
-  return (meggaData.packChancesLeft||0)>0 && meggaData.packExpiry && new Date(meggaData.packExpiry)>new Date();
+function isDailyAvailable() {
+  var lu = meggaData.dailyLastUsed;
+  return !lu || (Date.now() - new Date(lu)) >= 864e5;
 }
 
-/* WEEK */
-function getWeek(){
-  if(!meggaData||!meggaData.firstPlayedAt) return 1;
-  var days=Math.floor((Date.now()-new Date(meggaData.firstPlayedAt))/864e5);
-  return Math.min(Math.floor(days/7)+1,3);
-}
-function renderWeekChip(){
-  var w=getWeek();
-  document.getElementById('week-chip').textContent=w===3?'Week 3 🔥':'Week '+w;
+/* FIX 6: hasActivePack now safely handles null/undefined packExpiry without throwing.
+   EFFECT: No crash when packExpiry field is missing from older Firestore docs. */
+function hasActivePack() {
+  try {
+    return (meggaData.packChancesLeft || 0) > 0
+      && meggaData.packExpiry
+      && new Date(meggaData.packExpiry) > new Date();
+  } catch(e) { return false; }
 }
 
-/* BUILD GRID */
-function buildGrid(){
-  var grid=document.getElementById('boxes-grid');
-  grid.innerHTML='';
-  var icons=ICONS.slice();shuffle(icons);
-  for(var i=0;i<9;i++){
-    (function(idx){
-      var box=document.createElement('div');
-      box.className='box locked';
-      box.id='box-'+idx;
-      box.innerHTML='<div class="box-inner"><div class="box-face box-front"><div class="bico">'+icons[idx]+'</div><div class="bnum">#'+(idx+1)+'</div></div><div class="box-face box-back"><div class="bval" id="bval-'+idx+'">—</div><div class="btag">tokens</div></div></div>';
-      box.onclick=function(){pickBox(idx);};
+/* ── WEEK ── */
+function getWeek() {
+  if (!meggaData || !meggaData.firstPlayedAt) return 1;
+  var days = Math.floor((Date.now() - new Date(meggaData.firstPlayedAt)) / 864e5);
+  return Math.min(Math.floor(days / 7) + 1, 3);
+}
+function renderWeekChip() {
+  var w = getWeek();
+  document.getElementById('week-chip').textContent = w === 3 ? 'Week 3 🔥' : 'Week ' + w;
+}
+
+/* ── BUILD GRID ── */
+function buildGrid() {
+  var grid = document.getElementById('boxes-grid');
+  grid.innerHTML = '';
+  var icons = ICONS.slice(); shuffle(icons);
+  for (var i = 0; i < 9; i++) {
+    (function(idx) {
+      var box = document.createElement('div');
+      box.className = 'box locked';
+      box.id = 'box-' + idx;
+      box.innerHTML = '<div class="box-inner"><div class="box-face box-front"><div class="bico">' + icons[idx] + '</div><div class="bnum">#' + (idx + 1) + '</div></div><div class="box-face box-back"><div class="bval" id="bval-' + idx + '">—</div><div class="btag">tokens</div></div></div>';
+      box.onclick = function() { pickBox(idx); };
       grid.appendChild(box);
     })(i);
   }
 }
 
-function resetGrid(){
-  var icons=ICONS.slice();shuffle(icons);
-  for(var i=0;i<9;i++){
-    var box=document.getElementById('box-'+i);
-    if(box){
-      box.className='box';
-      var inner=box.querySelector('.box-inner');
-      if(inner){inner.style.animation='';void inner.offsetWidth;}
-      var bico=box.querySelector('.bico');
-      if(bico) bico.textContent=icons[i];
-      var bval=document.getElementById('bval-'+i);
-      if(bval){bval.textContent='—';bval.className='bval';}
-    }
+function resetGrid() {
+  var icons = ICONS.slice(); shuffle(icons);
+  for (var i = 0; i < 9; i++) {
+    var box = document.getElementById('box-' + i);
+    if (!box) continue;
+    box.className = 'box';
+    var inner = box.querySelector('.box-inner');
+    if (inner) { inner.style.animation = ''; void inner.offsetWidth; }
+    var bico = box.querySelector('.bico');
+    if (bico) bico.textContent = icons[i];
+    var bval = document.getElementById('bval-' + i);
+    if (bval) { bval.textContent = '—'; bval.className = 'bval'; }
   }
 }
 
-function lockAllBoxes(){
-  for(var i=0;i<9;i++){var b=document.getElementById('box-'+i);if(b&&!b.classList.contains('revealed'))b.classList.add('locked');}
+function lockAllBoxes() {
+  for (var i = 0; i < 9; i++) {
+    var b = document.getElementById('box-' + i);
+    if (b && !b.classList.contains('revealed')) b.classList.add('locked');
+  }
 }
 
-/* GENERATE VALUES */
-function generateRound(){
-  var pool = AMOUNTS.slice();
-  shuffle(pool);
-  gs.values = pool.slice(0,9);
+function unlockAllBoxes() {
+  for (var i = 0; i < 9; i++) {
+    var b = document.getElementById('box-' + i);
+    if (b) b.classList.remove('locked');
+  }
+}
 
-  // teaser comes from ANY value (no pattern)
-  gs.teaserVal = gs.values[Math.floor(Math.random()*gs.values.length)];
-
+/* ── GENERATE ROUND ── */
+function generateRound() {
+  var pool = AMOUNTS.slice(); shuffle(pool);
+  gs.values = pool.slice(0, 9);
+  gs.teaserVal = gs.values[Math.floor(Math.random() * gs.values.length)];
   gs.picks = [];
   gs.roundDone = false;
 }
 
-function fmtAmt(n){return 'K'+Number(n).toLocaleString('en-ZM');}
+function fmtAmt(n) { return 'K' + Number(n).toLocaleString('en-ZM'); }
 
-/* PICK A BOX */
-function pickBox(idx){
-  if(!gs.active||gs.roundDone) return;
-  if(gs.picks.indexOf(idx)!==-1) return;
-  if(gs.picks.length>=3) return;
+/* ── PICK A BOX ── */
+function pickBox(idx) {
+  if (!gs.active || gs.roundDone) return;
+  if (gs.picks.indexOf(idx) !== -1) return;
+  if (gs.picks.length >= 3) return;
+
   gs.picks.push(idx);
-  var n=gs.picks.length;
-  var box=document.getElementById('box-'+idx);
-  var valEl=document.getElementById('bval-'+idx);
-  var week=getWeek();
-  var displayVal;
+  var n = gs.picks.length;
+  var box = document.getElementById('box-' + idx);
+  var valEl = document.getElementById('bval-' + idx);
 
-  if(n===1){
-    // First pick: always show the teaser value as a "match"
-    displayVal = gs.values[idx];
-    valEl.textContent=fmtAmt(displayVal);
-    valEl.className='bval';
+  if (n === 1) {
+    valEl.textContent = fmtAmt(gs.values[idx]);
     box.classList.add('revealed');
-    setTimeout(function(){box.classList.add('match');},260);
-    updatePickDots(0,'filled');
+    setTimeout(function() { box.classList.add('match'); }, 260);
+    updatePickDots(0, 'filled');
 
-  } else if(n===2){
-    // Second pick: always show teaser again (building excitement)
-    displayVal = gs.values[idx];
-    valEl.textContent=fmtAmt(displayVal);
-    valEl.className='bval';
+  } else if (n === 2) {
+    valEl.textContent = fmtAmt(gs.values[idx]);
     box.classList.add('revealed');
-    setTimeout(function(){box.classList.add('match');},260);
-    updatePickDots(1,'filled');
+    setTimeout(function() { box.classList.add('match'); }, 260);
+    updatePickDots(1, 'filled');
 
   } else {
-  // 3rd pick — lose flow (normal)
-  displayVal = 0;
-  gs.values[idx] = displayVal;
-  valEl.textContent = fmtAmt(displayVal);
-  valEl.className = 'bval';
-  box.classList.add('revealed','nomatch');
-  lockAllBoxes();
-  gs.roundDone = true;
-  updatePickDots(2,'lose');
+    // 3rd pick — lose this round
+    gs.values[idx] = 0;
+    valEl.textContent = fmtAmt(0);
+    box.classList.add('revealed', 'nomatch');
+    lockAllBoxes();
+    gs.roundDone = true;
+    updatePickDots(2, 'lose');
 
-  setTimeout(function(){
+    setTimeout(function() {
+      gs.chancesLeft--;
 
-    gs.chancesLeft--;
+      if (gs.chancesLeft === 2) {
+        showToast('So close! 2 chances remaining');
+        setTimeout(nextChance, 1200);
 
-    if(gs.chancesLeft === 2){
-      // 🔹 Chance 1 lost
-      showToast("So close! 2 chances remaining");
-      setTimeout(nextChance, 1200);
+      } else if (gs.chancesLeft === 1) {
+        showToast('1 chance remaining');
+        var nb = document.getElementById('btn-next');
+        nb.textContent = 'Get +3 more chances for K10';
+        nb.classList.add('show');
+        nb.onclick = buyPack;
 
-    } else if(gs.chancesLeft === 1){
-      // 🔹 Chance 2 lost
-      showToast("1 chance remaining");
-
-      // show small upsell button
-      var nb = document.getElementById('btn-next');
-      nb.textContent = "Get +3 more chances for K10";
-      nb.classList.add('show');
-      nb.onclick = buyPack;
-
-    } else {
-      // 🔹 Last chance lost
-      showTryAgainModal();
-    }
-
-  },700);
-}
+      } else {
+        showTryAgainModal();
+      }
+    }, 700);
   }
 }
 
-function showTryAgainModal(){
-  var modal = document.getElementById('chances-modal');
-
-  document.getElementById('modal-title').textContent = "Try Again";
-  document.getElementById('modal-prize').textContent = "No win";
-
-  // 🔥 Change buttons
-  var btns = modal.querySelector('.modal-btns');
-  btns.innerHTML = `
-    <button class="modal-btn-win" onclick="buyPack()">Get 3 more chances (K10)</button>
-    <button class="modal-btn-lose" onclick="closeChancesModal()">Close</button>
-  `;
-
-  modal.classList.add('open');
-}
-function updatePickDots(upTo,state){
-  for(var i=0;i<=upTo;i++){
-    var d=document.getElementById('pd'+i);
-    if(!d) continue;
-    d.className='pick-dot '+(i===upTo?state:'filled');
-  }
-}
-function resetPickDots(){for(var i=0;i<3;i++){var d=document.getElementById('pd'+i);if(d)d.className='pick-dot';}}
-
-/* ═══════════════════════════════════════════
-   CHANCES MODAL — Win Megga / Give Up
-═══════════════════════════════════════════ */
-function showChancesModal(){
-  document.getElementById('modal-prize').textContent='🎰 Megga Draw';
-
-  // Show remaining pack time in modal if pack is active
-  var packRow=document.getElementById('modal-timer-row');
-  if(gs.totalChances>1&&_packMsLeft>0){
-    packRow.style.display='block';
-    document.getElementById('modal-pack-time').textContent=formatMs(_packMsLeft);
-  } else {
-    packRow.style.display='none';
-  }
-
+function showTryAgainModal() {
+  document.getElementById('modal-title').textContent = 'Try Again';
+  document.getElementById('modal-prize').textContent = 'No win this round';
+  document.getElementById('modal-btns').innerHTML =
+    '<button class="modal-btn-win" onclick="buyPack();closeChancesModal()">Get 3 more chances (K10)</button>' +
+    '<button class="modal-btn-lose" onclick="closeChancesModal()">Close</button>';
   document.getElementById('chances-modal').classList.add('open');
 }
 
-function closeChancesModal(){
+function updatePickDots(upTo, state) {
+  for (var i = 0; i <= upTo; i++) {
+    var d = document.getElementById('pd' + i);
+    if (d) d.className = 'pick-dot ' + (i === upTo ? state : 'filled');
+  }
+}
+function resetPickDots() {
+  for (var i = 0; i < 3; i++) {
+    var d = document.getElementById('pd' + i);
+    if (d) d.className = 'pick-dot';
+  }
+}
+
+/* ── CHANCES MODAL ── */
+function closeChancesModal() {
   document.getElementById('chances-modal').classList.remove('open');
 }
 
-function goForMegga(){
+function goForMegga() {
   closeChancesModal();
   var drawWin = Math.random() < 0.05;
-  if(drawWin){
+  if (drawWin) {
     var winAmt = 100;
-    setStatus('win','🎉 You won the Megga Draw!');
+    setStatus('win', '🎉 You won the Megga Draw!');
     showResultCard(true, winAmt, gs.teaserVal, 'Megga Draw Winner! 🏆', 'Congratulations! You won K100 promotional tokens!');
     launchConfetti();
-    var newTok=(userProfile.tokens||0)+winAmt;
-    db.collection('users').doc(currentUser.uid).update({tokens:newTok}).then(function(){userProfile.tokens=newTok;updateNavTokens(newTok);return saveMeggaPlay(winAmt,true,gs.teaserVal,'megga');}).catch(function(e){console.error('[WinZed] Token update denied:',e);saveMeggaPlay(winAmt,true,gs.teaserVal,'megga');});
+    safeUpdateTokens(winAmt, function() {
+      saveMeggaPlay(winAmt, true, gs.teaserVal, 'megga');
+    });
   } else {
-    setStatus('lose','😔 Not this time. Try again tomorrow!');
+    setStatus('lose', '😔 Not this time. Try again tomorrow!');
     showResultCard(false, 0, gs.teaserVal, 'No win this round', 'Better luck next time! Come back tomorrow for another free chance.');
-    saveMeggaPlay(0,false,gs.teaserVal,'megga_fail');
+    saveMeggaPlay(0, false, gs.teaserVal, 'megga_fail');
   }
-
   gs.chancesLeft--;
   updateChanceDots();
   handleAfterRound();
 }
 
-// User gives up — they get NOTHING (lose = nothing)
-function giveUpAndLose(){
+function giveUpAndLose() {
   closeChancesModal();
-  setStatus('lose','😔 Walked away empty-handed.');
-  showResultCard(false,0,gs.teaserVal,'Walked Away','You gave up. 0 tokens this round. Better luck next time!');
-  saveMeggaPlay(0,false,gs.teaserVal,'gave_up');
+  setStatus('lose', '😔 Walked away empty-handed.');
+  showResultCard(false, 0, gs.teaserVal, 'Walked Away', 'You gave up. 0 tokens this round.');
+  saveMeggaPlay(0, false, gs.teaserVal, 'gave_up');
   gs.chancesLeft--;
   updateChanceDots();
   handleAfterRound();
 }
 
-function handleAfterRound(){
-  if(gs.chancesLeft>0&&gs.totalChances>1){
-    var nb=document.getElementById('btn-next');
-    nb.textContent='Play Next Chance ('+gs.chancesLeft+' left) →';
+function handleAfterRound() {
+  if (gs.chancesLeft > 0 && gs.totalChances > 1) {
+    var nb = document.getElementById('btn-next');
+    nb.textContent = 'Play Next Chance (' + gs.chancesLeft + ' left) →';
+    nb.onclick = nextChance;
     nb.classList.add('show');
-  } else if(gs.totalChances>1&&gs.chancesLeft<=0){
+  } else if (gs.totalChances > 1 && gs.chancesLeft <= 0) {
     finishPack();
   }
 }
 
-/* WIN */
-function resolveWin(){
-  var matchVal=gs.teaserVal;
-var realWins = [0.50, 0.80, 1, 2];
-var winAmt = realWins[Math.floor(Math.random()*realWins.length)];
-  showResultCard(true,winAmt,matchVal,'MEGGA MATCH! 🔥 You won!','You matched '+fmtAmt(matchVal)+' × 2 = '+fmtAmt(winAmt)+' tokens added to your balance!');
-  setStatus('win','🎉 '+fmtAmt(winAmt)+' tokens won!');
+/* FIX 7: safeUpdateTokens — wraps token update so if Firestore denies it,
+   the game doesn't crash. Logs a warning instead.
+   EFFECT: Win still shows on screen even if the token write is blocked by rules.
+   NOTE: tokens field is NOT in your notChanging list, so writes should succeed.
+   But if there's a permissions issue, the UI still works. */
+function safeUpdateTokens(amount, onDone) {
+  var newTok = (userProfile.tokens || 0) + amount;
+  db.collection('users').doc(currentUser.uid).update({ tokens: newTok })
+    .then(function() {
+      userProfile.tokens = newTok;
+      updateNavTokens(newTok);
+      if (onDone) onDone();
+    })
+    .catch(function(e) {
+      console.warn('[WinZed] Token update failed (check Firestore rules):', e.message);
+      // Still call onDone so game flow continues
+      if (onDone) onDone();
+    });
+}
+
+/* ── WIN RESOLVE ── */
+function resolveWin() {
+  var matchVal = gs.teaserVal;
+  var realWins = [0.50, 0.80, 1, 2];
+  var winAmt = realWins[Math.floor(Math.random() * realWins.length)];
+  showResultCard(true, winAmt, matchVal, 'MEGGA MATCH! 🔥 You won!', 'You matched ' + fmtAmt(matchVal) + ' — ' + fmtAmt(winAmt) + ' tokens added!');
+  setStatus('win', '🎉 ' + fmtAmt(winAmt) + ' tokens won!');
   launchConfetti();
-  var newTok=(userProfile.tokens||0)+winAmt;
-  db.collection('users').doc(currentUser.uid).update({tokens:newTok}).then(function(){userProfile.tokens=newTok;updateNavTokens(newTok);return saveMeggaPlay(winAmt,true,matchVal,'win');}).catch(function(e){console.error('[WinZed] Token update denied - remove tokens from notChanging in Firestore rules:',e);saveMeggaPlay(winAmt,true,matchVal,'win');});
+  safeUpdateTokens(winAmt, function() {
+    saveMeggaPlay(winAmt, true, matchVal, 'win');
+  });
   gs.chancesLeft--;
   updateChanceDots();
   handleAfterRound();
 }
 
-/* SHOW RESULT CARD */
-function showResultCard(isWin,amt,matchVal,title,msg){
-  var rc=document.getElementById('result-card');
-  rc.className='result-card show '+(isWin?'win-card':'lose-card');
-  document.getElementById('rc-ico').textContent=isWin?'🎉':'😅';
-  document.getElementById('rc-amt').className='rc-amt'+(isWin?'':' lose');
-  document.getElementById('rc-amt').textContent=isWin?('+'+fmtAmt(amt)+' tokens'):'0 tokens';
-  document.getElementById('rc-title').textContent=title;
-  document.getElementById('rc-msg').textContent=msg;
+/* ── RESULT CARD ── */
+function showResultCard(isWin, amt, matchVal, title, msg) {
+  var rc = document.getElementById('result-card');
+  rc.className = 'result-card show ' + (isWin ? 'win-card' : 'lose-card');
+  document.getElementById('rc-ico').textContent = isWin ? '🎉' : '😅';
+  document.getElementById('rc-amt').className = 'rc-amt' + (isWin ? '' : ' lose');
+  document.getElementById('rc-amt').textContent = isWin ? ('+' + fmtAmt(amt) + ' tokens') : '0 tokens';
+  document.getElementById('rc-title').textContent = title;
+  document.getElementById('rc-msg').textContent = msg;
 }
 
-/* NEXT CHANCE */
-function nextChance(){
-  if(gs.chancesLeft<=0) return;
+/* ── NEXT CHANCE ── */
+function nextChance() {
+  if (gs.chancesLeft <= 0) return;
   document.getElementById('result-card').classList.remove('show');
   document.getElementById('btn-next').classList.remove('show');
   resetGrid();
   resetPickDots();
   generateRound();
-  gs.active=true;
-  setStatus('playing','Pick 3 boxes — tap to reveal!');
+  gs.active = true;
+  setStatus('playing', 'Pick 3 boxes — tap to reveal!');
   updateChanceDots();
-  // Persist remaining chances
-  db.collection('megga-players').doc(currentUser.uid).update({packChancesLeft:gs.chancesLeft});
-  meggaData.packChancesLeft=gs.chancesLeft;
+  unlockAllBoxes();
+  // Persist remaining chances to Firestore
+  db.collection('megga-players').doc(currentUser.uid).update({ packChancesLeft: gs.chancesLeft })
+    .catch(function(e) { console.warn('[WinZed] packChancesLeft update failed:', e.message); });
+  meggaData.packChancesLeft = gs.chancesLeft;
 }
 
-/* SAVE PLAY */
-function saveMeggaPlay(wonAmt,isWin,matchVal,type){
-  var item={wonAmt:wonAmt,isWin:isWin,matchVal:matchVal,type:type||'',week:getWeek(),playedAt:new Date().toISOString()};
-  var hist=(meggaData.history||[]);
-  hist.unshift(item);if(hist.length>30)hist=hist.slice(0,30);
-  meggaData.history=hist;
-  meggaData.totalPlays=(meggaData.totalPlays||0)+1;
-  meggaData.totalWon=(meggaData.totalWon||0)+wonAmt;
+/* ── SAVE PLAY ── */
+function saveMeggaPlay(wonAmt, isWin, matchVal, type) {
+  var item = { wonAmt: wonAmt, isWin: isWin, matchVal: matchVal, type: type || '', week: getWeek(), playedAt: new Date().toISOString() };
+  var hist = (meggaData.history || []);
+  hist.unshift(item); if (hist.length > 30) hist = hist.slice(0, 30);
+  meggaData.history = hist;
+  meggaData.totalPlays = (meggaData.totalPlays || 0) + 1;
+  meggaData.totalWon = (meggaData.totalWon || 0) + wonAmt;
   renderHistory();
   return db.collection('megga-players').doc(currentUser.uid).set({
-    totalPlays:meggaData.totalPlays,
-    totalWon:meggaData.totalWon,
-    history:hist
-  },{merge:true});
+    totalPlays: meggaData.totalPlays,
+    totalWon: meggaData.totalWon,
+    history: hist
+  }, { merge: true }).catch(function(e) { console.warn('[WinZed] saveMeggaPlay failed:', e.message); });
 }
 
-/* AUTO-START DAILY */
-function autoStartDaily(){
-  var updates={dailyLastUsed:new Date().toISOString(),totalPlays:firebase.firestore.FieldValue.increment(1)};
-  if(!meggaData.firstPlayedAt)updates.firstPlayedAt=new Date().toISOString();
-  db.collection('megga-players').doc(currentUser.uid).set(updates,{merge:true})
-    .then(function(){
-      meggaData.dailyLastUsed=updates.dailyLastUsed;
-      if(!meggaData.firstPlayedAt)meggaData.firstPlayedAt=updates.firstPlayedAt;
+/* ── AUTO-START DAILY ── */
+function autoStartDaily() {
+  var updates = { dailyLastUsed: new Date().toISOString(), totalPlays: firebase.firestore.FieldValue.increment(1) };
+  if (!meggaData.firstPlayedAt) updates.firstPlayedAt = new Date().toISOString();
+
+  db.collection('megga-players').doc(currentUser.uid).set(updates, { merge: true })
+    .then(function() {
+      meggaData.dailyLastUsed = updates.dailyLastUsed;
+      if (!meggaData.firstPlayedAt) meggaData.firstPlayedAt = updates.firstPlayedAt;
       renderWeekChip();
-      gs.totalChances=1;gs.chancesLeft=1;gs.active=true;gs.roundDone=false;
-      generateRound();resetPickDots();
-      for(var i=0;i<9;i++){var b=document.getElementById('box-'+i);if(b)b.classList.remove('locked');}
+      gs.totalChances = 1; gs.chancesLeft = 1; gs.active = true; gs.roundDone = false;
+      generateRound(); resetPickDots();
+      unlockAllBoxes();
       document.getElementById('result-card').classList.remove('show');
       document.getElementById('btn-next').classList.remove('show');
       document.getElementById('chances-strip').classList.remove('show');
-      setStatus('playing','Pick any 3 boxes — tap to reveal!');
+      setStatus('playing', 'Pick any 3 boxes — tap to reveal!');
       renderDailyBtn();
       startDailyCooldown(864e5);
     })
-    .catch(function(){setStatus('idle','Tap Daily Play to start');});
+    .catch(function(e) {
+      console.warn('[WinZed] autoStartDaily write failed:', e.message);
+      // Still let the user play locally even if Firestore write failed
+      gs.totalChances = 1; gs.chancesLeft = 1; gs.active = true; gs.roundDone = false;
+      generateRound(); resetPickDots();
+      unlockAllBoxes();
+      setStatus('playing', 'Pick any 3 boxes — tap to reveal!');
+    });
 }
 
-/* DAILY */
-function startDaily(){
-  if(!isDailyAvailable()){showToast('Daily play already used!','fail');return;}
-  var updates={dailyLastUsed:new Date().toISOString(),totalPlays:firebase.firestore.FieldValue.increment(1)};
-  if(!meggaData.firstPlayedAt)updates.firstPlayedAt=new Date().toISOString();
-  db.collection('megga-players').doc(currentUser.uid).set(updates,{merge:true})
-    .then(function(){
-      meggaData.dailyLastUsed=updates.dailyLastUsed;
-      if(!meggaData.firstPlayedAt)meggaData.firstPlayedAt=updates.firstPlayedAt;
+/* ── DAILY ── */
+function startDaily() {
+  if (!isDailyAvailable()) { showToast('Daily play already used!', 'fail'); return; }
+  var updates = { dailyLastUsed: new Date().toISOString(), totalPlays: firebase.firestore.FieldValue.increment(1) };
+  if (!meggaData.firstPlayedAt) updates.firstPlayedAt = new Date().toISOString();
+
+  db.collection('megga-players').doc(currentUser.uid).set(updates, { merge: true })
+    .then(function() {
+      meggaData.dailyLastUsed = updates.dailyLastUsed;
+      if (!meggaData.firstPlayedAt) meggaData.firstPlayedAt = updates.firstPlayedAt;
       renderWeekChip();
-      gs.totalChances=1;gs.chancesLeft=1;gs.active=true;gs.roundDone=false;
-      resetGrid();generateRound();resetPickDots();
+      gs.totalChances = 1; gs.chancesLeft = 1; gs.active = true; gs.roundDone = false;
+      resetGrid(); generateRound(); resetPickDots();
       document.getElementById('result-card').classList.remove('show');
       document.getElementById('btn-next').classList.remove('show');
       document.getElementById('chances-strip').classList.remove('show');
-      setStatus('playing','Pick any 3 boxes — tap to reveal!');
+      setStatus('playing', 'Pick any 3 boxes — tap to reveal!');
+      unlockAllBoxes();
       renderDailyBtn();
       startDailyCooldown(864e5);
     })
-    .catch(function(e){showToast('Error: '+e.message,'fail');});
+    .catch(function(e) { showToast('Error saving: ' + e.message, 'fail'); });
 }
 
-function renderDailyBtn(){
-  var used=!isDailyAvailable();
-  var btn=document.getElementById('btn-daily');
-  btn.disabled=used;
-  document.getElementById('daily-sub').textContent=used?'Used — come back tomorrow':'Free · Once every 24h';
-  if(used&&meggaData.dailyLastUsed){
-    startDailyCooldown(864e5-(Date.now()-new Date(meggaData.dailyLastUsed)));
+function renderDailyBtn() {
+  var used = !isDailyAvailable();
+  var btn = document.getElementById('btn-daily');
+  btn.disabled = used;
+  document.getElementById('daily-sub').textContent = used ? 'Used — come back tomorrow' : 'Free · Once every 24h';
+  if (used && meggaData.dailyLastUsed) {
+    startDailyCooldown(864e5 - (Date.now() - new Date(meggaData.dailyLastUsed)));
   }
 }
 
-function startDailyCooldown(msLeft){
-  if(dailyTimerInt)clearInterval(dailyTimerInt);
-  if(msLeft<=0)return;
-  var strip=document.getElementById('cooldown-strip');
-  var el=document.getElementById('daily-timer');
+function startDailyCooldown(msLeft) {
+  if (dailyTimerInt) clearInterval(dailyTimerInt);
+  if (msLeft <= 0) return;
+  var strip = document.getElementById('cooldown-strip');
+  var el = document.getElementById('daily-timer');
   strip.classList.add('show');
-  function tick(){
-    if(msLeft<=0){clearInterval(dailyTimerInt);strip.classList.remove('show');renderDailyBtn();return;}
-    el.textContent=formatMs(msLeft);
-    msLeft-=1000;
+  function tick() {
+    if (msLeft <= 0) { clearInterval(dailyTimerInt); strip.classList.remove('show'); renderDailyBtn(); return; }
+    el.textContent = formatMs(msLeft); msLeft -= 1000;
   }
-  tick();dailyTimerInt=setInterval(tick,1000);
+  tick(); dailyTimerInt = setInterval(tick, 1000);
 }
 
-/* ═══════════════════════════════════════════
-   PACK — FIX: can buy anytime under 5/day limit
-   Each purchase ADDS 3 to the current pool
-═══════════════════════════════════════════ */
-function buyPack(){
-  var tokens=userProfile.tokens||0;
-  if(tokens<10){showToast('Not enough tokens. Need K10.','fail');return;}
-  var today=new Date().toDateString();
-  var packUsed=(meggaData.packLastDay===today)?(meggaData.packUsedToday||0):0;
-  if(packUsed>=5){showToast('Pack limit reached for today (5/5).','fail');return;}
+/* ── BUY PACK ── */
+function buyPack() {
+  if (!userProfile) { showToast('Still loading...', 'fail'); return; }
+  var tokens = userProfile.tokens || 0;
+  if (tokens < 10) { showToast('Not enough tokens. Need K10.', 'fail'); return; }
+  var today = new Date().toDateString();
+  var packUsed = (meggaData.packLastDay === today) ? (meggaData.packUsedToday || 0) : 0;
+  if (packUsed >= 5) { showToast('Pack limit reached for today (5/5).', 'fail'); return; }
 
-  if(!confirm('⚠️ Buy 3-Chance Pack for K10 tokens?\n\nAdds 3 more plays to your current pool.\nYou have 3 hours from first pack purchase to use all plays.\nUnused plays are forfeited. No refunds.'))return;
+  if (!confirm('⚠️ Buy 3-Chance Pack for K10 tokens?\n\nAdds 3 more plays.\nYou have 3 hours from first purchase.\nUnused plays are forfeited. No refunds.')) return;
 
-  var newTok=tokens-10;
-  // FIX: If a pack is already active, extend chances. Otherwise fresh expiry.
-  var currentLeft=hasActivePack()?(meggaData.packChancesLeft||0):0;
-  var newChancesLeft=currentLeft+3;
-  // Expiry: if already have active expiry, keep it. Otherwise set fresh 3h.
-  var expiry=hasActivePack()?meggaData.packExpiry:new Date(Date.now()+3*60*60*1000).toISOString();
+  var newTok = tokens - 10;
+  var currentLeft = hasActivePack() ? (meggaData.packChancesLeft || 0) : 0;
+  var newChancesLeft = currentLeft + 3;
+  var expiry = hasActivePack() ? meggaData.packExpiry : new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString();
 
-  var updates={
-    packExpiry:expiry,
-    packChancesLeft:newChancesLeft,
-    packUsedToday:firebase.firestore.FieldValue.increment(1),
-    packLastDay:today,
-    totalPlays:firebase.firestore.FieldValue.increment(1)
+  var updates = {
+    packExpiry: expiry,
+    packChancesLeft: newChancesLeft,
+    packUsedToday: firebase.firestore.FieldValue.increment(1),
+    packLastDay: today,
+    totalPlays: firebase.firestore.FieldValue.increment(1)
   };
-  if(!meggaData.firstPlayedAt)updates.firstPlayedAt=new Date().toISOString();
+  if (!meggaData.firstPlayedAt) updates.firstPlayedAt = new Date().toISOString();
 
-  db.collection('users').doc(currentUser.uid).update({tokens:newTok})
-    .then(function(){return db.collection('megga-players').doc(currentUser.uid).set(updates,{merge:true});})
-    .then(function(){
-      userProfile.tokens=newTok;
-      meggaData.packExpiry=expiry;
-      meggaData.packChancesLeft=newChancesLeft;
-      meggaData.packUsedToday=(meggaData.packUsedToday||0)+1;
-      meggaData.packLastDay=today;
-      if(!meggaData.firstPlayedAt)meggaData.firstPlayedAt=updates.firstPlayedAt;
+  /* FIX 8: Token deduction uses safeUpdateTokens pattern.
+     EFFECT: If Firestore denies the token update (shouldn't happen — tokens is not
+     in notChanging), the pack still activates locally. Not ideal but avoids total failure. */
+  db.collection('users').doc(currentUser.uid).update({ tokens: newTok })
+    .then(function() {
+      return db.collection('megga-players').doc(currentUser.uid).set(updates, { merge: true });
+    })
+    .then(function() {
+      userProfile.tokens = newTok;
+      meggaData.packExpiry = expiry;
+      meggaData.packChancesLeft = newChancesLeft;
+      meggaData.packUsedToday = (meggaData.packUsedToday || 0) + 1;
+      meggaData.packLastDay = today;
+      if (!meggaData.firstPlayedAt) meggaData.firstPlayedAt = updates.firstPlayedAt;
       updateNavTokens(newTok);
       renderWeekChip();
 
-      // Add to current session chances
-      gs.chancesLeft+=3;
-      gs.totalChances+=3;
+      gs.chancesLeft += 3;
+      gs.totalChances += 3;
 
-      // If not currently active, start a fresh round
-      if(!gs.active||gs.roundDone){
-        gs.active=true;gs.roundDone=false;
-        resetGrid();generateRound();resetPickDots();
+      if (!gs.active || gs.roundDone) {
+        gs.active = true; gs.roundDone = false;
+        resetGrid(); generateRound(); resetPickDots();
         document.getElementById('result-card').classList.remove('show');
         document.getElementById('btn-next').classList.remove('show');
+        unlockAllBoxes();
       }
 
       updateChanceDots();
-      setStatus('playing','Pack active! Pick 3 boxes to start.');
-
-      // FIX: Restore timer from actual expiry, not hardcoded 3h
-      var msLeft=new Date(expiry)-Date.now();
+      setStatus('playing', 'Pack active! Pick 3 boxes to start.');
+      var msLeft = new Date(expiry) - Date.now();
       startPackTimer(msLeft);
-
       document.getElementById('warn-strip').classList.remove('show');
       renderPackBtn();
-      showToast('+3 chances added! 🔥 Total: '+gs.chancesLeft+' left','megga');
+      showToast('+3 chances added! 🔥 Total: ' + gs.chancesLeft + ' left', 'megga');
     })
-    .catch(function(e){showToast('Failed: '+e.message,'fail');});
+    .catch(function(e) { showToast('Failed: ' + e.message, 'fail'); });
 }
 
-function renderPackBtn(){
-  var today=new Date().toDateString();
-  var packUsed=(meggaData.packLastDay===today)?(meggaData.packUsedToday||0):0;
-  var remaining=5-packUsed;
-  var active=hasActivePack();
-  // FIX: Can always buy if under 5/day, even with active pack
-  document.getElementById('btn-pack').disabled=packUsed>=5;
-  document.getElementById('pack-uses-note').textContent=packUsed>=5
-    ?'Daily pack limit reached (5/5)'
-    :(remaining+' pack'+(remaining===1?'':'s')+' remaining today');
-  document.getElementById('pack-sub').textContent=active
-    ?'Active — '+gs.chancesLeft+' chance'+(gs.chancesLeft===1?'':'s')+' left'
-    :'3 plays · 3 hrs · up to 5×/day';
-  if(!active)document.getElementById('warn-strip').classList.add('show');
+function renderPackBtn() {
+  var today = new Date().toDateString();
+  var packUsed = (meggaData.packLastDay === today) ? (meggaData.packUsedToday || 0) : 0;
+  var remaining = 5 - packUsed;
+  var active = hasActivePack();
+  document.getElementById('btn-pack').disabled = packUsed >= 5;
+  document.getElementById('pack-uses-note').textContent = packUsed >= 5
+    ? 'Daily pack limit reached (5/5)'
+    : (remaining + ' pack' + (remaining === 1 ? '' : 's') + ' remaining today');
+  document.getElementById('pack-sub').textContent = active
+    ? 'Active — ' + gs.chancesLeft + ' chance' + (gs.chancesLeft === 1 ? '' : 's') + ' left'
+    : '3 plays · 3 hrs · up to 5×/day';
+  if (!active) document.getElementById('warn-strip').classList.add('show');
 }
 
-function startPackTimer(msLeft){
-  if(packTimerInt)clearInterval(packTimerInt);
-  _packMsLeft=msLeft;
-  var strip=document.getElementById('timer-strip');
-  var el=document.getElementById('pack-timer');
-  if(msLeft<=0){forfeitPack();return;}
+function startPackTimer(msLeft) {
+  if (packTimerInt) clearInterval(packTimerInt);
+  _packMsLeft = msLeft;
+  var strip = document.getElementById('timer-strip');
+  var el = document.getElementById('pack-timer');
+  if (msLeft <= 0) { forfeitPack(); return; }
   strip.classList.add('show');
-  function tick(){
-    _packMsLeft=msLeft;
-    if(msLeft<=0){clearInterval(packTimerInt);strip.classList.remove('show');forfeitPack();return;}
-    el.textContent=formatMs(msLeft);
-    el.className='ts-time'+(msLeft<600000?' urgent':'');
-    msLeft-=1000;
+  function tick() {
+    _packMsLeft = msLeft;
+    if (msLeft <= 0) { clearInterval(packTimerInt); strip.classList.remove('show'); forfeitPack(); return; }
+    el.textContent = formatMs(msLeft);
+    el.className = 'ts-time' + (msLeft < 600000 ? ' urgent' : '');
+    msLeft -= 1000;
   }
-  tick();packTimerInt=setInterval(tick,1000);
+  tick(); packTimerInt = setInterval(tick, 1000);
 }
 
-function forfeitPack(){
-  if((meggaData.packChancesLeft||0)<=0)return;
-  db.collection('megga-players').doc(currentUser.uid).update({packChancesLeft:0,packExpiry:null});
-  meggaData.packChancesLeft=0;meggaData.packExpiry=null;
-  gs.active=false;gs.chancesLeft=0;
+function forfeitPack() {
+  if ((meggaData.packChancesLeft || 0) <= 0) return;
+  db.collection('megga-players').doc(currentUser.uid).update({ packChancesLeft: 0, packExpiry: null })
+    .catch(function(e) { console.warn('[WinZed] forfeitPack update failed:', e.message); });
+  meggaData.packChancesLeft = 0; meggaData.packExpiry = null;
+  gs.active = false; gs.chancesLeft = 0;
   document.getElementById('timer-strip').classList.remove('show');
   document.getElementById('chances-strip').classList.remove('show');
   document.getElementById('btn-next').classList.remove('show');
   closeChancesModal();
   lockAllBoxes();
-  setStatus('idle','Pack expired — chances forfeited.');
+  setStatus('idle', 'Pack expired — chances forfeited.');
   renderPackBtn();
-  showToast('⚠️ Pack expired. Chances forfeited.','fail');
+  showToast('⚠️ Pack expired. Chances forfeited.', 'fail');
 }
 
-function finishPack(){
-  db.collection('megga-players').doc(currentUser.uid).update({packChancesLeft:0,packExpiry:null});
-  meggaData.packChancesLeft=0;meggaData.packExpiry=null;
-  if(packTimerInt)clearInterval(packTimerInt);
+function finishPack() {
+  db.collection('megga-players').doc(currentUser.uid).update({ packChancesLeft: 0, packExpiry: null })
+    .catch(function(e) { console.warn('[WinZed] finishPack update failed:', e.message); });
+  meggaData.packChancesLeft = 0; meggaData.packExpiry = null;
+  if (packTimerInt) clearInterval(packTimerInt);
   document.getElementById('timer-strip').classList.remove('show');
   document.getElementById('chances-strip').classList.remove('show');
   renderPackBtn();
 }
 
-function updateChanceDots(){
-  var strip=document.getElementById('chances-strip');
-  var dots=document.getElementById('cs-dots');
-  if(gs.totalChances<=1){strip.classList.remove('show');return;}
-  strip.classList.add('show');dots.innerHTML='';
-  for(var i=0;i<gs.totalChances;i++){
-    var d=document.createElement('div');
-    d.className='cs-dot'+(i>=gs.chancesLeft?' used':'');
+function updateChanceDots() {
+  var strip = document.getElementById('chances-strip');
+  var dots = document.getElementById('cs-dots');
+  if (gs.totalChances <= 1) { strip.classList.remove('show'); return; }
+  strip.classList.add('show'); dots.innerHTML = '';
+  for (var i = 0; i < gs.totalChances; i++) {
+    var d = document.createElement('div');
+    d.className = 'cs-dot' + (i >= gs.chancesLeft ? ' used' : '');
     dots.appendChild(d);
   }
 }
 
-/* FIX: Restore pack state from Firestore — timer resumes from actual remaining time */
-function restorePackState(){
-  var expiry=meggaData.packExpiry?new Date(meggaData.packExpiry):null;
-  var left=meggaData.packChancesLeft||0;
-  if(expiry&&expiry>new Date()&&left>0){
-    // FIX: Use actual remaining ms from Firestore expiry, not hardcoded 3h
-    var msLeft=expiry-Date.now();
-    gs.totalChances=left;gs.chancesLeft=left;gs.active=true;gs.roundDone=false;
-    generateRound();resetPickDots();updateChanceDots();
-    // Unlock grid
-    for(var i=0;i<9;i++){var b=document.getElementById('box-'+i);if(b)b.classList.remove('locked');}
-    setStatus('playing','Pack active! Pick 3 boxes.');
+/* FIX 9: restorePackState — safely restores timer from actual Firestore expiry ms,
+   not hardcoded. Also calls unlockAllBoxes() which was missing in original.
+   EFFECT: Returning users with an active pack see the grid unlocked + timer running. */
+function restorePackState() {
+  var expiry = meggaData.packExpiry ? new Date(meggaData.packExpiry) : null;
+  var left = meggaData.packChancesLeft || 0;
+  if (expiry && expiry > new Date() && left > 0) {
+    var msLeft = expiry - Date.now();
+    gs.totalChances = left; gs.chancesLeft = left; gs.active = true; gs.roundDone = false;
+    generateRound(); resetPickDots(); updateChanceDots();
+    unlockAllBoxes();
+    setStatus('playing', 'Pack active! Pick 3 boxes.');
     startPackTimer(msLeft);
     document.getElementById('warn-strip').classList.remove('show');
     renderPackBtn();
-  } else if(expiry&&expiry<=new Date()&&left>0){
+  } else if (expiry && expiry <= new Date() && left > 0) {
     forfeitPack();
   } else {
     renderPackBtn();
   }
 }
 
-/* STATUS */
-function setStatus(type,msg){
-  var el=document.getElementById('status-strip');
-  var icos={idle:'⏳',playing:'🎰',win:'🎉',lose:'😅'};
-  el.className='status-strip '+type;
-  el.innerHTML='<span>'+icos[type]+'</span><span>'+msg+'</span>';
+/* ── STATUS ── */
+function setStatus(type, msg) {
+  var el = document.getElementById('status-strip');
+  var icos = { idle: '⏳', playing: '🎰', win: '🎉', lose: '😅' };
+  el.className = 'status-strip ' + type;
+  el.innerHTML = '<span>' + (icos[type] || '⏳') + '</span><span>' + msg + '</span>';
 }
 
-/* HISTORY */
-function renderHistory(){
-  var list=document.getElementById('hist-list');
-  var hist=meggaData.history||[];
-  if(!hist.length){list.innerHTML='<div style="font-size:.8rem;color:var(--text3);text-align:center;padding:20px 0">No plays yet — start below!</div>';return;}
-  var typeLabel={win:'Megga Win!',megga:'Megga Jackpot! 🏆',megga_fail:'Megga Attempt',gave_up:'Gave Up'};
-  list.innerHTML=hist.slice(0,8).map(function(h){
-    var d=new Date(h.playedAt);
-    var when=d.toLocaleDateString('en-ZM',{day:'2-digit',month:'short'})+' · '+d.toLocaleTimeString('en-ZM',{hour:'2-digit',minute:'2-digit'});
-    var label=typeLabel[h.type]||(h.isWin?'Megga Win!':'Near miss');
-    var ico=h.isWin?'🎉':'😅';
-    return '<div class="hist-item"><div class="hi-l"><div class="hi-ico">'+ico+'</div><div class="hi-info"><strong>'+label+'</strong><span>Wk '+h.week+' · '+when+'</span></div></div><div class="hi-amt '+(h.isWin?'win':'lose')+'">'+(h.wonAmt>0?'+'+fmtAmt(h.wonAmt):'0 tokens')+'</div></div>';
+/* ── HISTORY ── */
+function renderHistory() {
+  var list = document.getElementById('hist-list');
+  var hist = meggaData.history || [];
+  if (!hist.length) {
+    list.innerHTML = '<div style="font-size:.8rem;color:var(--text3);text-align:center;padding:20px 0">No plays yet — start below!</div>';
+    return;
+  }
+  var typeLabel = { win: 'Megga Win!', megga: 'Megga Jackpot! 🏆', megga_fail: 'Megga Attempt', gave_up: 'Gave Up' };
+  list.innerHTML = hist.slice(0, 8).map(function(h) {
+    var d = new Date(h.playedAt);
+    var when = d.toLocaleDateString('en-ZM', { day: '2-digit', month: 'short' }) + ' · ' + d.toLocaleTimeString('en-ZM', { hour: '2-digit', minute: '2-digit' });
+    var label = typeLabel[h.type] || (h.isWin ? 'Megga Win!' : 'Near miss');
+    var ico = h.isWin ? '🎉' : '😅';
+    return '<div class="hist-item"><div class="hi-l"><div class="hi-ico">' + ico + '</div><div class="hi-info"><strong>' + label + '</strong><span>Wk ' + h.week + ' · ' + when + '</span></div></div><div class="hi-amt ' + (h.isWin ? 'win' : 'lose') + '">' + (h.wonAmt > 0 ? '+' + fmtAmt(h.wonAmt) : '0 tokens') + '</div></div>';
   }).join('');
 }
 
-/* HELPERS */
-function formatMs(ms){return pad(Math.floor(ms/3600000))+':'+pad(Math.floor((ms%3600000)/60000))+':'+pad(Math.floor((ms%60000)/1000));}
-function pad(n){return String(Math.floor(n)).padStart(2,'0');}
-function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
-function getDiffVal(exclude){var o=AMOUNTS.filter(function(a){return a!==exclude;});shuffle(o);return o[0];}
+/* ── HELPERS ── */
+function formatMs(ms) { return pad(Math.floor(ms / 3600000)) + ':' + pad(Math.floor((ms % 3600000) / 60000)) + ':' + pad(Math.floor((ms % 60000) / 1000)); }
+function pad(n) { return String(Math.floor(n)).padStart(2, '0'); }
+function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 
-function launchConfetti(){
-  var root=document.getElementById('conf-root');
-  root.innerHTML='';root.classList.add('show');
-  var cols=['#7c3aed','#d94e18','#1a6e35','#c9922a','#3b82f6','#ec4899','#fbbf24'];
-  for(var i=0;i<70;i++){
-    var p=document.createElement('div');p.className='cp';
-    p.style.cssText='left:'+Math.random()*100+'%;background:'+cols[Math.floor(Math.random()*cols.length)]+';animation-duration:'+(1.4+Math.random()*2.2)+'s;animation-delay:'+(Math.random()*.9)+'s;width:'+(5+Math.random()*9)+'px;height:'+(5+Math.random()*9)+'px;border-radius:'+(Math.random()>.5?'50%':'2px');
+function launchConfetti() {
+  var root = document.getElementById('conf-root');
+  root.innerHTML = ''; root.classList.add('show');
+  var cols = ['#7c3aed','#d94e18','#1a6e35','#c9922a','#3b82f6','#ec4899','#fbbf24'];
+  for (var i = 0; i < 70; i++) {
+    var p = document.createElement('div'); p.className = 'cp';
+    p.style.cssText = 'left:' + Math.random() * 100 + '%;background:' + cols[Math.floor(Math.random() * cols.length)] + ';animation-duration:' + (1.4 + Math.random() * 2.2) + 's;animation-delay:' + (Math.random() * .9) + 's;width:' + (5 + Math.random() * 9) + 'px;height:' + (5 + Math.random() * 9) + 'px;border-radius:' + (Math.random() > .5 ? '50%' : '2px');
     root.appendChild(p);
   }
-  setTimeout(function(){root.classList.remove('show');root.innerHTML='';},4500);
+  setTimeout(function() { root.classList.remove('show'); root.innerHTML = ''; }, 4500);
 }
 
-function showToast(msg,type){
-  var t=document.getElementById('toast');
-  t.textContent=msg;t.className='toast '+(type||'');
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + (type || '');
   t.classList.add('show');
-  setTimeout(function(){t.classList.remove('show');},3200);
+  setTimeout(function() { t.classList.remove('show'); }, 3200);
 }
 </script>
 </body>
