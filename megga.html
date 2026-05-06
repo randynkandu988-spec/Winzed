@@ -286,12 +286,12 @@ footer{border-top:1px solid var(--border);padding:14px 16px;font-size:.69rem;col
   <div class="modal-box">
     <span class="modal-ico">🎰</span>
     <div class="modal-title" id="modal-title">All Chances Used!</div>
-    <div class="modal-body">You've used all your picks for this round. Ready to go for the big one?</div>
-    <div class="modal-prize" id="modal-prize">K1,000,000</div>
-    <div class="modal-prize-lbl">Grand Megga Prize</div>
+    <div class="modal-body">This is a free promotional draw. Results are randomly determined. No purchase necessary.</div>
+    <div class="modal-prize" id="modal-prize">🎰 Megga Draw</div>
+    <div class="modal-prize-lbl">Promotional Prize Draw</div>
     <div class="modal-btns">
-      <button class="modal-btn-win" onclick="goForMegga()">🔥 WIN MEGGA K1,000,000!</button>
-      <button class="modal-btn-lose" onclick="giveUpAndLose()">😔 Give Up &amp; Walk Away</button>
+      <button class="modal-btn-win" onclick="goForMegga()">🔥 Enter the Megga Draw!</button>
+      <button class="modal-btn-lose" onclick="giveUpAndLose()">😔 Skip this round</button>
     </div>
     <div class="modal-timer" id="modal-timer-row" style="display:none">
       Pack timer: <strong id="modal-pack-time">—</strong> remaining
@@ -429,7 +429,6 @@ var currentUser=null, userProfile=null, meggaData=null, _authChecked=false;
 // chancesLeft  = how many rounds still to play
 // packChancesLeft in Firestore = remaining across sessions
 var gs={active:false,totalChances:1,chancesLeft:1,picks:[],values:[],teaserVal:0,roundDone:false};
-var losePattern = 0; // which pick will be the odd one out
 
 var ICONS=['🎁','🎁','🎁','🎁️','🎁','🎁','🎁','🎁','🎁'];
 
@@ -572,7 +571,6 @@ function generateRound(){
 
   // teaser comes from ANY value (no pattern)
   gs.teaserVal = gs.values[Math.floor(Math.random()*gs.values.length)];
-losePattern = Math.floor(Math.random() * 3); // 0=first breaks, 1=second breaks, 2=third breaks
 
   gs.picks = [];
   gs.roundDone = false;
@@ -591,45 +589,64 @@ function pickBox(idx){
   var valEl=document.getElementById('bval-'+idx);
   var week=getWeek();
   var displayVal;
-var isOddOne = (n-1) === losePattern;
-  if(isOddOne){
-    displayVal = getDiffVal(gs.teaserVal);
-    gs.values[idx] = displayVal;
-    valEl.textContent = fmtAmt(displayVal);
-    box.classList.add('revealed','nomatch');
-    updatePickDots(n-1,'filled');
-  } else {
-    displayVal = gs.teaserVal;
-    gs.values[idx] = displayVal;
-    valEl.textContent = fmtAmt(displayVal);
+
+  if(n===1){
+    // First pick: always show the teaser value as a "match"
+    displayVal = gs.values[idx];
+    valEl.textContent=fmtAmt(displayVal);
+    valEl.className='bval';
     box.classList.add('revealed');
     setTimeout(function(){box.classList.add('match');},260);
-    updatePickDots(n-1,'filled');
-  }
+    updatePickDots(0,'filled');
 
-  if(n===3){
-    lockAllBoxes();
-    gs.roundDone = true;
-    updatePickDots(2, isOddOne ? 'lose' : 'filled');
-    setTimeout(function(){
-      gs.chancesLeft--;
-      if(gs.chancesLeft === 2){
-        showToast("So close! 2 chances remaining");
-        setTimeout(nextChance, 1200);
-      } else if(gs.chancesLeft === 1){
-        showToast("1 chance remaining");
-        var nb = document.getElementById('btn-next');
-        nb.textContent = "Get +3 more chances for K10";
-        nb.classList.add('show');
-        nb.onclick = buyPack;
-      } else {
-        showTryAgainModal();
-      }
-    }, 700);
-  }
-}  
+  } else if(n===2){
+    // Second pick: always show teaser again (building excitement)
+    displayVal = gs.values[idx];
+    valEl.textContent=fmtAmt(displayVal);
+    valEl.className='bval';
+    box.classList.add('revealed');
+    setTimeout(function(){box.classList.add('match');},260);
+    updatePickDots(1,'filled');
 
-function showTryAgainModal(){
+  } else {
+  // 3rd pick — lose flow (normal)
+  displayVal = 0;
+  gs.values[idx] = displayVal;
+  valEl.textContent = fmtAmt(displayVal);
+  valEl.className = 'bval';
+  box.classList.add('revealed','nomatch');
+  lockAllBoxes();
+  gs.roundDone = true;
+  updatePickDots(2,'lose');
+
+  setTimeout(function(){
+
+    gs.chancesLeft--;
+
+    if(gs.chancesLeft === 2){
+      // 🔹 Chance 1 lost
+      showToast("So close! 2 chances remaining");
+      setTimeout(nextChance, 1200);
+
+    } else if(gs.chancesLeft === 1){
+      // 🔹 Chance 2 lost
+      showToast("1 chance remaining");
+
+      // show small upsell button
+      var nb = document.getElementById('btn-next');
+      nb.textContent = "Get +3 more chances for K10";
+      nb.classList.add('show');
+      nb.onclick = buyPack;
+
+    } else {
+      // 🔹 Last chance lost
+      showTryAgainModal();
+    }
+
+  },700);
+}
+  }
+}
 
 function showTryAgainModal(){
   var modal = document.getElementById('chances-modal');
@@ -659,8 +676,7 @@ function resetPickDots(){for(var i=0;i<3;i++){var d=document.getElementById('pd'
    CHANCES MODAL — Win Megga / Give Up
 ═══════════════════════════════════════════ */
 function showChancesModal(){
-  // Update modal prize display
-  document.getElementById('modal-prize').textContent=fmtAmt(1000000);
+  document.getElementById('modal-prize').textContent='🎰 Megga Draw';
 
   // Show remaining pack time in modal if pack is active
   var packRow=document.getElementById('modal-timer-row');
@@ -678,24 +694,19 @@ function closeChancesModal(){
   document.getElementById('chances-modal').classList.remove('open');
 }
 
-// User goes for the K1,000,000 Megga win
 function goForMegga(){
   closeChancesModal();
-  // Outcome: Week 3 always wins; otherwise 20% chance of jackpot
-  var week=getWeek();
-  var jackpotWin=(week>=3)||Math.random()<0.2;
-
-  if(jackpotWin){
-    var winAmt=1000000;
-    setStatus('win','🎉 '+fmtAmt(winAmt)+' MEGGA JACKPOT!');
-    showResultCard(true,winAmt,gs.teaserVal,'MEGGA JACKPOT! 🏆','You went for it and WON the grand prize! '+fmtAmt(winAmt)+' tokens added!');
+  var drawWin = Math.random() < 0.05;
+  if(drawWin){
+    var winAmt = 100;
+    setStatus('win','🎉 You won the Megga Draw!');
+    showResultCard(true, winAmt, gs.teaserVal, 'Megga Draw Winner! 🏆', 'Congratulations! You won K100 promotional tokens!');
     launchConfetti();
     var newTok=(userProfile.tokens||0)+winAmt;
     db.collection('users').doc(currentUser.uid).update({tokens:newTok}).then(function(){userProfile.tokens=newTok;updateNavTokens(newTok);return saveMeggaPlay(winAmt,true,gs.teaserVal,'megga');}).catch(function(e){console.error('[WinZed] Token update denied:',e);saveMeggaPlay(winAmt,true,gs.teaserVal,'megga');});
   } else {
-    // Lose everything — 0 tokens
-    setStatus('lose','😔 No luck this time. Nothing won.');
-    showResultCard(false,0,gs.teaserVal,'No Megga Match','You went for it but luck wasn\'t on your side. 0 tokens this round. Come back tomorrow!');
+    setStatus('lose','😔 Not this time. Try again tomorrow!');
+    showResultCard(false, 0, gs.teaserVal, 'No win this round', 'Better luck next time! Come back tomorrow for another free chance.');
     saveMeggaPlay(0,false,gs.teaserVal,'megga_fail');
   }
 
