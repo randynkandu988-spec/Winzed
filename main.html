@@ -631,6 +631,63 @@ footer{border-top:1px solid var(--border);padding:16px 18px;display:flex;justify
   </div>
 </footer>
 
+<!-- ACTIVITY POPUP -->
+<div id="activity-popup" style="
+  display:none;
+  position:fixed;
+  bottom:32px;
+  left:50%;
+  transform:translateX(-50%) translateY(80px);
+  width:calc(100% - 40px);
+  max-width:340px;
+  background:rgba(255,255,255,0.15);
+  backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  border:1px solid rgba(255,255,255,0.35);
+  border-radius:20px;
+  padding:13px 16px;
+  z-index:9998;
+  box-shadow:0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.4);
+  opacity:0;
+  transition:all .45s cubic-bezier(.34,1.56,.64,1);
+">
+  <div style="display:flex;align-items:center;gap:11px">
+    <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#e8501a,#b83d10);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;box-shadow:0 2px 8px rgba(232,80,26,0.35)">🎉</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:.83rem;font-weight:700;color:#111;line-height:1.35" id="ap-name">Mutale from Lusaka just entered!</div>
+      <div style="font-size:.72rem;color:rgba(0,0,0,0.45);margin-top:2px;font-family:'Times New Roman',Times,serif" id="ap-phone">+26097...00</div>
+    </div>
+    <div style="width:8px;height:8px;border-radius:50%;background:#1fad54;flex-shrink:0;box-shadow:0 0 8px rgba(31,173,84,0.8)"></div>
+  </div>
+</div>
+
+<script>
+var AP_NAMES=['Mutale','Chanda','Bwalya','Tembo','Mwamba','Banda','Phiri','Ngoma','Zulu','Chipimo','Luo','Mumba','Sichone','Mulenga','Kaluba','Mwila','Lungu','Kabwe','Simukonda','Chilufya','Nkonde','Mbewe','Sakala','Musonda','Chimba','Katongo','Siame','Nkandu','Chibwe'];
+var AP_DISTRICTS=['Lusaka','Kitwe','Ndola','Kabwe','Livingstone','Chipata','Solwezi','Kasama','Mongu','Mazabuka','Chingola','Mufulira','Luanshya','Kafue','Choma','Mansa','Samfya','Petauke','Lundazi','Sesheke','Nakonde'];
+function apRandPhone(){var p=['097','096','095','077','076','075'];return '+260'+p[Math.floor(Math.random()*p.length)]+'...'+String(Math.floor(Math.random()*90+10));}
+function showActivityPopup(){
+  var name=AP_NAMES[Math.floor(Math.random()*AP_NAMES.length)];
+  var district=AP_DISTRICTS[Math.floor(Math.random()*AP_DISTRICTS.length)];
+  var popup=document.getElementById('activity-popup');
+  document.getElementById('ap-name').textContent=name+' from '+district+' just entered!';
+  document.getElementById('ap-phone').textContent=apRandPhone();
+  popup.style.display='block';
+  setTimeout(function(){
+    popup.style.transform='translateX(-50%) translateY(0)';
+    popup.style.opacity='1';
+  },50);
+  setTimeout(function(){
+    popup.style.transform='translateX(-50%) translateY(80px)';
+    popup.style.opacity='0';
+    setTimeout(function(){popup.style.display='none';},450);
+  },4000);
+}
+setTimeout(function(){
+  showActivityPopup();
+  setInterval(function(){showActivityPopup();},Math.floor(Math.random()*7000+8000));
+},3000);
+</script>
+</div>
 
 <script>
 firebase.initializeApp({
