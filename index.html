@@ -468,6 +468,111 @@ footer{padding:24px 60px;border-top:1px solid var(--border);display:flex;justify
 </section>
 <footer><span>© 2026 WinZed · Kabwe, Zambia 🇿🇲</span><span>Legitimate. Transparent. Zambian-run.</span></footer>
 
+<!-- ACTIVITY POPUP -->
+<!-- 1. STACK CONTAINER -->
+<div id="activity-stack" style="
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column-reverse; /* Newest cards appear at bottom and push old ones up */
+  gap: 10px;
+  z-index: 9999;
+  width: calc(100% - 40px);
+  max-width: 360px;
+  pointer-events: none;
+"></div>
+
+<!-- 2. STYLES & ANIMATIONS -->
+<style>
+  @keyframes pulse-dot {
+    0%, 100% { box-shadow: 0 0 10px rgba(31,173,84,0.9), 0 0 20px rgba(31,173,84,0.4); }
+    50% { box-shadow: 0 0 16px rgba(31,173,84,1), 0 0 32px rgba(31,173,84,0.7); }
+  }
+  
+  .winzed-card {
+    background: rgba(255, 255, 255, 0.9); /* Slightly more solid for readability */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1.5px solid rgba(232, 80, 26, 0.3);
+    border-radius: 20px;
+    padding: 12px 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+    transition: all .6s cubic-bezier(.34, 1.56, .64, 1);
+    pointer-events: auto;
+  }
+</style>
+
+<!-- 3. THE LOGIC -->
+<script>
+(function() {
+  const FIRST = ['Mutale','Chanda','Bwalya','Tembo','Mwamba','Banda','Phiri','Mulenga','Mumba','Sichone','Kaluba','Mwila','Lungu','Chilufya','Nkonde','Mbewe','Sakala','Musonda','Chimba','Katongo'];
+  const LAST = ['Chanda','Phiri','Banda','Mulenga','Tembo','Zulu','Mumba','Lungu','Musonda','Ngoma'];
+  const CITIES = ['Lusaka','Kitwe','Ndola','Kabwe','Livingstone','Chipata','Solwezi','Kasama'];
+  const PRIZES = ['📱 iPhone 15 Pro Max','💻 Dell XPS 15 (i9)','🎮 PlayStation 5'];
+
+  function createEntry() {
+    const stack = document.getElementById('activity-stack');
+    
+    // Hard Limit: Maximum 3 cards on screen
+    if (stack.children.length >= 3) return;
+
+    const name = FIRST[Math.floor(Math.random()*FIRST.length)] + ' ' + LAST[Math.floor(Math.random()*LAST.length)];
+    const city = CITIES[Math.floor(Math.random()*CITIES.length)];
+    const prize = PRIZES[Math.floor(Math.random()*PRIZES.length)];
+
+    const card = document.createElement('div');
+    card.className = 'winzed-card';
+    card.innerHTML = `
+      <div style="display:flex; align-items:center; gap:12px; font-family: 'DM Sans', sans-serif;">
+        <div style="width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,#e8501a,#b83d10); display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;">🎉</div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:.82rem; font-weight:700; color:#1a1a1a; line-height:1.2;">${name} from ${city} just entered!</div>
+          <div style="font-size:.74rem; color:#e8501a; margin-top:2px; font-weight:600;">${prize}</div>
+        </div>
+        <div style="width:8px; height:8px; border-radius:50%; background:#1fad54; flex-shrink:0; animation:pulse-dot 1.5s infinite;"></div>
+      </div>
+    `;
+
+    stack.appendChild(card);
+
+    // Slide In
+    setTimeout(() => {
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0) scale(1)';
+    }, 100);
+
+    // Fade Out & Remove after random duration (5-8s)
+    const stayTime = Math.floor(Math.random() * 3000) + 5000;
+    setTimeout(() => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(-20px) scale(0.95)';
+      setTimeout(() => card.remove(), 600);
+    }, stayTime);
+  }
+
+  function runRandomizedLoop() {
+    // Randomly choose batch size (1 to 3)
+    const batchSize = Math.floor(Math.random() * 3) + 1;
+    
+    for (let i = 0; i < batchSize; i++) {
+      // Stagger each card in the batch by 0.8s to 2.5s
+      setTimeout(createEntry, i * (Math.random() * 1700 + 800));
+    }
+
+    // Set next batch to trigger in 4 to 9 seconds
+    const nextLoop = Math.floor(Math.random() * 5000) + 4000;
+    setTimeout(runRandomizedLoop, nextLoop);
+  }
+
+  // Start the first cycle
+  setTimeout(runRandomizedLoop, 2000);
+})();
+</script>
+ 
 <script>
 firebase.initializeApp({
   apiKey:"AIzaSyA-vSOEKp4v6aPud9enjiA-AzuQVl53Wto",
