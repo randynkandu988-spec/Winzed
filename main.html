@@ -631,35 +631,6 @@ footer{border-top:1px solid var(--border);padding:16px 18px;display:flex;justify
   </div>
 </footer>
 
-</div>
-
-<script>
-var AP_NAMES=['Mutale','Chanda','Bwalya','Tembo','Mwamba','Banda','Phiri','Ngoma','Zulu','Chipimo','Luo','Mumba','Sichone','Mulenga','Kaluba','Mwila','Lungu','Kabwe','Simukonda','Chilufya','Nkonde','Mbewe','Sakala','Musonda','Chimba','Katongo','Siame','Nkandu','Chibwe'];
-var AP_DISTRICTS=['Lusaka','Kitwe','Ndola','Kabwe','Livingstone','Chipata','Solwezi','Kasama','Mongu','Mazabuka','Chingola','Mufulira','Luanshya','Kafue','Choma','Mansa','Samfya','Petauke','Lundazi','Sesheke','Nakonde'];
-function apRandPhone(){var p=['097','096','095','077','076','075'];return '+260'+p[Math.floor(Math.random()*p.length)]+'...'+String(Math.floor(Math.random()*90+10));}
-function showActivityPopup(){
-  var name=AP_NAMES[Math.floor(Math.random()*AP_NAMES.length)];
-  var district=AP_DISTRICTS[Math.floor(Math.random()*AP_DISTRICTS.length)];
-  var popup=document.getElementById('activity-popup');
-  document.getElementById('ap-name').textContent=name+' from '+district;
-document.getElementById('ap-phone').textContent='+260......'+String(Math.floor(Math.random()*900+100));
-  popup.style.display='block';
-  setTimeout(function(){
-    popup.style.transform='translateX(-50%) translateY(0)';
-    popup.style.opacity='1';
-  },50);
-  setTimeout(function(){
-    popup.style.transform='translateX(-50%) translateY(80px)';
-    popup.style.opacity='0';
-    setTimeout(function(){popup.style.display='none';},450);
-  },4000);
-}
-setTimeout(function(){
-  showActivityPopup();
-  setInterval(function(){showActivityPopup();},Math.floor(Math.random()*7000+8000));
-},3000);
-</script>
-</div>
 
 <script>
 firebase.initializeApp({
