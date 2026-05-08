@@ -872,7 +872,6 @@ function handleDeposit(){
   var amt=parseFloat(document.getElementById('dep-amount').value);
   if(!amt||amt<1){document.getElementById('dep-err').textContent='Enter a valid amount.';document.getElementById('dep-err').style.display='block';return;}
   if(!currentUser||!userProfile) return;
-  // Send deposit request notification to admin
   db.collection('notifications').add({
     type:'deposit',
     uid:currentUser.uid,
@@ -880,11 +879,11 @@ function handleDeposit(){
     phone:userProfile.phone,
     amount:amt,
     status:'pending',
+    requestedAt:new Date().toISOString(),
     createdAt:new Date().toISOString(),
     seen:false
   }).then(function(){
     closeDeposit();
-    // Dial *115# to pay
     window.location.href='tel:*115%23';
     showToast('Deposit request sent! Complete payment via *115#','ok');
   }).catch(function(e){
@@ -899,7 +898,6 @@ function handleWithdraw(){
   if(!amt||amt<1){document.getElementById('wd-err').textContent='Enter a valid amount.';document.getElementById('wd-err').style.display='block';return;}
   if(amt>tokens){document.getElementById('wd-err').textContent='You only have K'+tokens.toFixed(2)+' in tokens.';document.getElementById('wd-err').style.display='block';return;}
   var newTokens=tokens-amt;
-  // Deduct tokens and send withdrawal notification to admin
   db.collection('users').doc(currentUser.uid).update({tokens:newTokens})
     .then(function(){
       return db.collection('notifications').add({
@@ -909,6 +907,7 @@ function handleWithdraw(){
         phone:userProfile.phone,
         amount:amt,
         status:'pending',
+        requestedAt:new Date().toISOString(),
         createdAt:new Date().toISOString(),
         seen:false
       });
@@ -918,14 +917,12 @@ function handleWithdraw(){
       document.getElementById('token-bal').textContent=newTokens;
       updateNavTokens(newTokens);
       closeWithdraw();
-      // Show success popup with confetti
       document.getElementById('wd-s-amount').textContent='K'+amt.toFixed(2);
       document.getElementById('wd-success').classList.add('show');
       launchConfetti();
     })
     .catch(function(e){document.getElementById('wd-err').textContent='Failed: '+e.message;document.getElementById('wd-err').style.display='block';});
 }
-
 function showStatusPopup(ico,title,msg){
   document.getElementById('sp-ico').textContent=ico;
   document.getElementById('sp-title').textContent=title;
@@ -1111,6 +1108,28 @@ document.querySelectorAll('details').forEach(function(d){
 document.getElementById('deposit-modal').addEventListener('click',function(e){if(e.target===this)closeDeposit();});
 document.getElementById('withdraw-modal').addEventListener('click',function(e){if(e.target===this)closeWithdraw();});
 startRealtime();
+
+
+// ADD THE showToast FUNCTION RIGHT HERE 👇
+
+function showToast(msg,type){
+  var t=document.getElementById('adm-toast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='adm-toast';
+    t.style.cssText='position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(70px);background:#111;color:#fff;padding:11px 18px;border-radius:10px;font-size:.83rem;font-weight:500;z-index:9999;opacity:0;transition:all .28s;max-width:300px;text-align:center';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;
+  t.style.background=type==='ok'?'#16a34a':type==='fail'?'#dc2626':'#111';
+  t.style.transform='translateX(-50%) translateY(0)';
+  t.style.opacity='1';
+  setTimeout(function(){
+    t.style.transform='translateX(-50%) translateY(70px)';
+    t.style.opacity='0';
+  },3500);
+}
+
 </script>
 </body>
 </html>
